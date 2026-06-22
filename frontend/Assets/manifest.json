@@ -5,18 +5,18 @@
   "icons": [
     {
       "sizes": "192x192",
-      "src": "dumbpad.png",
+      "src": "rustpad.png",
       "type": "image/png"
     },
     {
       "sizes": "512x512",
-      "src": "dumbpad.png",
+      "src": "rustpad.png",
       "type": "image/png"
     }
   ],
-  "name": "DumbPad",
+  "name": "RustPad",
   "orientation": "any",
-  "short_name": "DumbPad",
+  "short_name": "RustPad",
   "start_url": "/",
   "theme_color": "#000000"
 }
