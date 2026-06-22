@@ -82,6 +82,14 @@ pub fn header(props: &HeaderProps) -> Html {
         html! {}
     };
 
+    let on_lang_change = {
+        let locale = locale.clone();
+        Callback::from(move |e: Event| {
+            let select: web_sys::HtmlSelectElement = e.target_unchecked_into();
+            locale.on_change.emit(select.value());
+        })
+    };
+
     html! {
         <header>
             <div class="notepad-controls">
@@ -123,6 +131,18 @@ pub fn header(props: &HeaderProps) -> Html {
                 <button id="settings-button" class="icon-button" onclick={props.on_settings_open.clone()} data-tooltip={locale.t("settings")}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 6l8 0" /><path d="M16 6l4 0" /><path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 12l2 0" /><path d="M10 12l10 0" /><path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 18l11 0" /><path d="M19 18l1 0" /></svg>
                 </button>
+                <div class="lang-select-wrapper" style="display: inline-flex; align-items: center; margin-right: 5px;">
+                    <select id="header-lang-selector" onchange={on_lang_change} value={locale.current.clone()} class="header-select" style="background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px; font-size: 0.85rem; cursor: pointer; outline: none; transition: border-color 0.2s;">
+                        <option value="en">{"en"}</option>
+                        <option value="zh">{"zh"}</option>
+                        <option value="es">{"es"}</option>
+                        <option value="de">{"de"}</option>
+                        <option value="ja">{"ja"}</option>
+                        <option value="fr">{"fr"}</option>
+                        <option value="pt">{"pt"}</option>
+                        <option value="ru">{"ru"}</option>
+                    </select>
+                </div>
                 <button id="theme-toggle" class="icon-button" onclick={props.toggle_theme.clone()}>
                     {theme_toggle_icon}
                 </button>

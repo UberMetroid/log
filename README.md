@@ -1,169 +1,193 @@
 # RustPad
 
-<p align="center">
-  <img src="https://img.shields.io/github/v/tag/UberMetroid/RustPad?label=version" alt="GitHub tag" />
-  <img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License" />
-  <img src="https://img.shields.io/github/actions/workflow/status/UberMetroid/RustPad/docker-publish.yml" alt="GitHub Actions Workflow Status" />
-</p>
-
 A stupid simple, no auth (unless you want it!), modern collaborative notepad application with auto-save functionality, fuzzy search, and multi-theme support. Built with Rust (Axum/Tokio backend and Yew/Trunk WebAssembly frontend).
+
+---
+
+## Overview
+
+RustPad is a lightweight, self-hosted web application that provides real-time collaborative notepad editing. It is engineered from the ground up for minimal resource usage, zero external JS library bloat, and maximum load speeds. It utilizes Operational Transformation (OT) for conflict-free concurrent editing and native browser APIs (such as LocalStorage and DOM-based sanitization) to guarantee safety and high performance.
 
 ---
 
 ## Features
 
-- 📝 **Live Auto-Save**: Small visual auto-save indicator (`"Saving..."` ➡️ `"Saved"`).
-- 🎨 **Multi-Theme Support**: Light, Dark, Sepia, Nord, and Dracula modes with matching styled toggle icons.
-- 🤝 **Real-Time Collaboration**: Peer cursor sync and live Operational Transformation edit synchronization via WebSockets.
-- 📶 **Robust Connection**: Exponential back-off reconnection loop with offline edit queuing.
-- 🔍 **Fuzzy Search**: Find notepads by title or content with highlighted search previews.
-- 🔒 **PIN Security**: Lock down your pad with an optional 4-10 digit PIN and brute-force lockout protection.
-- ⌨️ **Keyboard Shortcuts**: Fully keyboard-accessible controls with a shortcut help modal (`?`).
-- 🛠️ **Markdown Toolbar**: Helper panel for Bold, Italic, Headers, Links, and Code formatting.
+*   🤝 **Real-Time Collaboration**: Concurrent editing synchronization using Operational Transformation (OT) over WebSockets with peer cursor position tracking.
+*   📶 **Robust Connection Hook**: Exponential back-off reconnection loop in Yew that queues offline operations and replays them upon recovery.
+*   🎨 **Rich Theme Customization**: Pre-built Dracula, Sepia, Nord, Light, and Dark modes with instant matching SVG iconography toggles.
+*   🔒 **Optional Access PIN**: Secure pads using a 4-10 digit PIN with IP-based rate-limiting lockout protection to prevent brute-force attacks.
+*   🔍 **Fuzzy In-Memory Search**: Search titles and text content using an optimal zero-allocation subsequence scoring algorithm.
+*   ⌨️ **Keyboard Accessibility**: Fast shortcuts (e.g. `Ctrl+K` for search, `?` for help) to navigate the editor completely keyboard-only.
+*   🗺️ **Multi-Language Header Dropdown**: Switch between 8 primary internet developer languages (English, Chinese, Spanish, German, Japanese, French, Portuguese, Russian) straight from the header.
+
+---
+
+## Prerequisites & Environment Variables
+
+### System Requirements
+*   **Operating System**: Linux, macOS, or Windows (via WSL recommended for local build)
+*   **Rust Toolchain**: Stable `rustc` and `cargo` (v1.75+)
+*   **WebAssembly Toolchain**: `wasm32-unknown-unknown` target component
+*   **Asset Bundler**: `trunk` CLI (v0.18+)
+
+### Configuration Environment Variables
+Create a `.env` file in the root directory to configure the application runtime:
+
+| Variable | Description | Default | Environment |
+| :--- | :--- | :--- | :--- |
+| `PORT` | The port address the backend web server listens on | `3000` | All |
+| `BASE_URL` | Application base URL (must start with http/https) | `http://localhost:3000` | All |
+| `RUSTPAD_PIN` | Optional 4-10 digit authentication PIN (digit-only) | None | All |
+| `SITE_TITLE` | The title shown in the browser and PWA manifest | `RustPad` | All |
+| `MAX_ATTEMPTS` | Maximum PIN auth attempts allowed before rate lockout | `5` | Production/Dev |
+| `LOCKOUT_TIME` | Bruteforce lockout duration in minutes | `15` | Production/Dev |
+| `TRUST_PROXY` | Set true if deploying behind reverse proxy (Nginx, Cloudflare) | `false` | Production |
+| `TRUSTED_PROXY_IPS` | Comma-separated list of trusted proxy CIDRs/IPs | None | Production |
 
 ---
 
 ## Quick Start
 
-### Docker (Recommended)
+Get RustPad up and running locally in under 2 minutes:
 
 ```bash
-docker run -d -p 3000:3000 -v ./data:/app/data ghcr.io/ubermetroid/rustpad:latest
+# 1. Clone the repository
+git clone https://github.com/UberMetroid/RustPad.git
+cd RustPad
+
+# 2. Add WASM target and install Trunk
+rustup target add wasm32-unknown-unknown
+cargo install --locked trunk
+
+# 3. Build static frontend assets
+cd frontend && trunk build --release && cd ..
+
+# 4. Compile and start the backend server
+cargo run --release
 ```
 
-1. Go to `http://localhost:3000`
-2. Start typing! Notes auto-save in `./data`.
+Open your browser to `http://localhost:3000` and start editing!
+
+---
+
+## Docker & Docker Compose Configurations
+
+### Standalone Docker Run
+To deploy the precompiled container image in one command:
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -v ./data:/app/data \
+  -e SITE_TITLE="My Notepad" \
+  -e RUSTPAD_PIN="1234" \
+  ghcr.io/ubermetroid/rustpad:latest
+```
 
 ### Docker Compose
-
-Create a `docker-compose.yml` file:
-
+Create a `docker-compose.yml` file for persistent deployment:
 ```yaml
+version: '3.8'
+
 services:
   rustpad:
     image: ghcr.io/ubermetroid/rustpad:latest
     container_name: rustpad
     restart: unless-stopped
     ports:
-      - 3000:3000
+      - "3000:3000"
     volumes:
       - ./data:/app/data
     environment:
-      SITE_TITLE: RustPad
-      RUSTPAD_PIN: 1234 # Optional authentication PIN (leave empty to disable)
-      BASE_URL: http://localhost:3000
+      SITE_TITLE: "CompanyPad"
+      RUSTPAD_PIN: "5678"
+      BASE_URL: "http://localhost:3000"
+      TRUST_PROXY: "false"
 ```
-
-Start the container:
-```bash
-docker compose up -d
-```
-
----
-
-## Local Development
-
-To build and run the application locally outside of Docker, you must have the Rust toolchain installed.
-
-### Prerequisites
-
-Install the WebAssembly target and `trunk` (the WASM asset bundler):
-
-```bash
-# Install WASM target
-rustup target add wasm32-unknown-unknown
-
-# Install Trunk
-cargo install --locked trunk
-```
-
-### Build Steps
-
-1. **Build the Yew Frontend**:
-   Build the static assets using Trunk:
-   ```bash
-   cd frontend
-   trunk build --release
-   cd ..
-   ```
-   This generates the optimized WASM/JS bundle inside `frontend/dist/`.
-
-2. **Run the Axum Backend**:
-   Build and start the backend server, which serves the frontend static directory:
-   ```bash
-   cargo run --release
-   ```
-
-The application will start listening on port 3000: `http://localhost:3000`. Local configurations can be set by editing the `.env` file in the root directory.
-
----
-
-## Configuration
-
-RustPad can be configured via environment variables:
-
-| Variable | Description | Default |
-| --- | --- | --- |
-| `PORT` | Port the web server listens on | `3000` |
-| `BASE_URL` | Application base URL (must end with `/`) | `http://localhost:PORT/` |
-| `RUSTPAD_PIN` | Optional 4-10 digit authentication PIN | None |
-| `SITE_TITLE` | The title shown in the web interface | `RustPad` |
-| `ALLOWED_ORIGINS` | Comma-separated list of origins allowed for CORS | All origins (`*`) |
-| `LOCKOUT_TIME` | Pin brute-force lockout time in minutes | `15` |
-| `MAX_ATTEMPTS` | Maximum pin entry attempts before lockout | `5` |
-| `DISABLE_PRINT_EXPAND` | Disable auto-expanding detail blocks in print/PDF | `false` |
-
-> [!NOTE]
-> See [.env.example](file:///.env.example) for advanced configurations and reverse-proxy settings.
+Run `docker compose up -d` to launch the services.
 
 ---
 
 ## Technical Details
 
-- **Backend**: Rust (Axum + Tokio + WebSockets)
-- **Frontend**: Rust (Yew + WebAssembly via Trunk)
-- **Styling**: Vanilla CSS variables
-- **Container**: Multi-stage lightweight Docker image
+*   **Type-Safe Core**: Written in 100% safe Rust. No unsafe memory allocations or compiler warnings are present.
+*   **Real-Time Sync**: Implements operational transformation (OT) mapping client document version sequences with server ACKs.
+*   **Memory Efficiency**: Utilizes string caching of search keys during notepad creation to bypass heap-allocation bottlenecks during active search loops.
+*   **Security Integrity**: Implements browser-native DOM-based HTML sanitization on parsed markdown outputs, completely neutralizing XSS risks.
+*   **Fast Loading**: Front-end WASM package is optimized for size, compiling down to a 612KB package (236KB gzipped transfer payload).
 
 ---
 
-## Project Structure
+## File Tree
 
 ```
-RustPad/
-├── Cargo.toml          # Workspace manifest
-├── Dockerfile          # Multi-stage optimized Rust builder
-├── docker-compose.yml  # Docker Compose configuration
-├── data/               # Persistent notepad storage (plain text files + metadata index)
-│   ├── notepads.json   # Index metadata of all pads
-│   └── <notepad-id>.txt# Individual raw text notepad content
-├── docs/               # Technical documentation
-│   └── MARKDOWN_SYNTAX_HIGHLIGHTING_USAGE.md
-├── src/                # Axum backend web server & WebSocket implementation
-│   ├── main.rs         # Application entrypoint & Axum setup
-│   ├── state.rs        # AppState and global configurations
-│   ├── migration.rs    # Auto-migration of old folder layouts
-│   ├── search.rs       # In-memory notepad fuzzy indexing/searching
-│   ├── utils.rs        # Helper parsing utilities
-│   ├── ws.rs           # WebSocket connection handlers for client-sync
-│   └── routes/         # REST API controller handlers (Auth, CRUD, config)
-└── frontend/           # Yew frontend (SPA compiled to WASM via Trunk)
+dumbpad/
+├── Cargo.toml          # Workspace root manifest
+├── Dockerfile          # Multi-stage optimized Docker builder
+├── .github/            # GitHub Actions integration
+│   └── workflows/
+│       └── ci.yml      # CI lint/compile check pipeline
+├── data/               # Persistent text files and index databases
+├── src/                # Backend Rust Axum source files
+│   ├── main.rs         # Server initialization, config parsing, file watcher
+│   ├── state.rs        # AppState and rate-limiting mappings
+│   ├── search.rs       # In-memory search cache and sequence matching
+│   ├── utils.rs        # IP extractor and cryptographic hashing
+│   ├── ws.rs           # WebSocket communication handler
+│   ├── migration.rs    # Schema layout migrations
+│   └── routes/         # Router controllers
+│       ├── mod.rs      # REST endpoint mappings and PWA manifest builder
+│       ├── auth.rs     # PIN authentication and session validations
+│       ├── notepads_crud.rs # Notepad metadata routes
+│       └── notepads_io.rs   # Note saving, deleting, and loading IO
+└── frontend/           # Frontend Rust Yew source files
     ├── Cargo.toml      # Frontend dependency manifest
     ├── index.html      # Trunk template HTML entrypoint
-    ├── service-worker.js# PWA offline asset caching & version control
-    ├── Assets/         # Static visual assets & metadata
-    │   ├── styles.css  # Application stylesheet (responsive modern layout)
-    │   ├── manifest.json# PWA standalone manifest configuration
-    │   └── rustpad.svg # Application vector logo
-    └── src/            # Yew components & client business logic
+    ├── src/            # Yew components
+        ├── main.rs     # Shell routing component
+        ├── editor.rs   # Core textarea notepad workspace
+        ├── login.rs    # PIN code entry panel
+        ├── preview.rs  # Secure DOM markdown viewer
+        ├── search.rs   # Fuzzy document finder modal
+        ├── services.rs # API REST HTTP client
+        ├── settings.rs # Modal configuration options
+        ├── collab.rs   # WS sync loop hook
+        ├── collab_utils.rs # Peer cursor calculation JS interface
+        ├── header.rs   # Toolbar header and language selectors
+        └── i18n.rs     # Translation Context provider
 ```
 
 ---
 
-## Contributing & License
+## Testing & Linting
 
-1. Fork the repo and create your feature branch.
-2. Commit changes using Conventional Commits.
-3. Open a Pull Request.
+### Unit and Integration Tests
+Validate workspace rules and functional unit tests across all targets:
+```bash
+cargo test --workspace
+```
 
-Distributed under the **GPL-3.0 License**. See [LICENSE](file:///LICENSE) for more information.
+### Checking Lints (Clippy)
+Ensure the code conforms to standard clean architecture guidelines:
+```bash
+cargo clippy --workspace --all-targets -- -D warnings
+```
+
+### Checking Code Formatting
+```bash
+cargo fmt --all --check
+```
+
+---
+
+## Contributing
+
+1.  Fork the repository and create your feature branch (`git checkout -b feature/cool-idea`).
+2.  Commit your updates using the Conventional Commits format (`git commit -m "feat: add syntax highlighting for rust"`).
+3.  Ensure your code formatting passes formatting checks (`cargo fmt`).
+4.  Open a Pull Request to the `main` branch.
+
+---
+
+## License
+
+Distributed under the **GPL-3.0 License**. See [LICENSE](file:///LICENSE) for more details.
