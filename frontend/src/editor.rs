@@ -22,6 +22,7 @@ pub fn editor(props: &EditorProps) -> Html {
     let last_loaded_id = use_state(|| "".to_string());
     let debounce_timer = use_mut_ref(|| None::<Timeout>);
     let editor_ref = use_node_ref();
+    let save_status = use_state(|| "saved".to_string());
 
     {
         let content = content.clone();
@@ -79,11 +80,14 @@ pub fn editor(props: &EditorProps) -> Html {
         let notepad_id = props.notepad_id.clone();
         let save_interval = props.save_interval;
         let timer_ref = debounce_timer.clone();
+        let save_status = save_status.clone();
         
         Callback::from(move |e: InputEvent| {
             let textarea: web_sys::HtmlTextAreaElement = e.target_unchecked_into();
             let val = textarea.value();
             content.set(val.clone());
+            
+            save_status.set("unsaved".to_string());
             
             if let Some(t) = timer_ref.borrow_mut().take() {
                 t.cancel();
@@ -92,9 +96,13 @@ pub fn editor(props: &EditorProps) -> Html {
             if save_interval > 0 {
                 let nid = notepad_id.clone();
                 let save_val = val.clone();
+                let status = save_status.clone();
                 let new_timer = Timeout::new(save_interval as u32, move || {
+                    status.set("saving".to_string());
                     spawn_local(async move {
-                        let _ = ApiService::save_notes(&nid, &save_val).await;
+                        if ApiService::save_notes(&nid, &save_val).await.is_ok() {
+                            status.set("saved".to_string());
+                        }
                     });
                 });
                 *timer_ref.borrow_mut() = Some(new_timer);
@@ -104,16 +112,21 @@ pub fn editor(props: &EditorProps) -> Html {
 
     let on_blur = {
         let notepad_id = props.notepad_id.clone();
-        let content_val = (*content).clone();
+        let content = content.clone();
         let timer_ref = debounce_timer.clone();
+        let save_status = save_status.clone();
         
         Callback::from(move |_| {
             if let Some(t) = timer_ref.borrow_mut().take() {
                 t.cancel();
                 let nid = notepad_id.clone();
-                let save_val = content_val.clone();
+                let save_val = (*content).clone();
+                let status = save_status.clone();
+                status.set("saving".to_string());
                 spawn_local(async move {
-                    let _ = ApiService::save_notes(&nid, &save_val).await;
+                    if ApiService::save_notes(&nid, &save_val).await.is_ok() {
+                        status.set("saved".to_string());
+                    }
                 });
             }
         })
@@ -136,6 +149,15 @@ pub fn editor(props: &EditorProps) -> Html {
                         onblur={on_blur}
                         autofocus=true
                     />
+                    <div class={classes!("save-status", (*save_status).clone())}>
+                        {
+                            match save_status.as_str() {
+                                "unsaved" => html! { <>{"● "}{"Unsaved changes"}</> },
+                                "saving" => html! { <>{"◌ "}{"Saving..."}</> },
+                                _ => html! { <>{"✓ "}{"Saved"}</> },
+                            }
+                        }
+                    </div>
                 </div>
             }
             
