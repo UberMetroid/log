@@ -16,7 +16,7 @@ WORKDIR /app
 
 # Copy cargo configuration and dependency manifests
 COPY Cargo.toml Cargo.lock ./
-COPY frontend/Cargo.toml frontend/index.html ./frontend/
+COPY frontend/Cargo.toml ./frontend/
 COPY backend/Cargo.toml ./backend/
 
 # Cache backend dependencies by building a dummy binary
@@ -24,7 +24,7 @@ RUN mkdir -p backend/src && echo "fn main() {}" > backend/src/main.rs
 RUN mkdir -p frontend/src && echo "fn main() {}" > frontend/src/main.rs
 RUN cargo build --release
 RUN rm -f target/release/deps/rustpad*
-RUN cd frontend && trunk build --release
+RUN cargo build --release --target wasm32-unknown-unknown -p rustpad-frontend
 
 # Copy actual source code and compile
 COPY backend/src ./backend/src
