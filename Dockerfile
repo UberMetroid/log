@@ -1,5 +1,6 @@
 # --- Stage 1: Build the Rust Backend and Frontend ---
 FROM rust:alpine AS rust-builder
+ENV CARGO_BUILD_JOBS=1
 RUN apk add --no-cache musl-dev wget gzip brotli
 
 # Install WebAssembly target and Trunk builder
