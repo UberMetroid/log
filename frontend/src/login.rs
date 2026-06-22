@@ -14,6 +14,19 @@ pub fn login(props: &LoginProps) -> Html {
     let is_locked = use_state(|| false);
     let pin_length = use_state(|| 4);
     let theme = use_state(StorageService::get_theme);
+    let input_ref = use_node_ref();
+
+    {
+        let input_ref = input_ref.clone();
+        use_effect_with((*is_locked).clone(), move |locked| {
+            if !*locked {
+                if let Some(input) = input_ref.cast::<web_sys::HtmlInputElement>() {
+                    let _ = input.focus();
+                }
+            }
+            || ()
+        });
+    }
 
     {
         let on_success = props.on_login_success.clone();
@@ -127,6 +140,7 @@ pub fn login(props: &LoginProps) -> Html {
                 </div>
                 <div class="pin-wrapper">
                     <input 
+                        ref={input_ref.clone()}
                         type="password" 
                         class="modal-input pin-input-field" 
                         value={(*pin_input).clone()}
