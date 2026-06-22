@@ -613,12 +613,16 @@ main {
 }
 
 .login-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     min-height: 100vh;
     background-color: var(--bg-color);
     position: relative;
+    padding-top: 2rem;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
+    text-align: center;
 }
 
 #login-content {
