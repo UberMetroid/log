@@ -68,18 +68,16 @@ async fn ws_handler(socket: WebSocket, state: AppState) {
 
                         let clients_map = state.clients.read().await;
                         let count = clients_map.len();
-                        if count > 1 {
-                            println!("Broadcasting user_connected for: {}", uid);
-                            let connect_msg = serde_json::json!({
-                                "type": "user_connected",
-                                "userId": uid,
-                                "notepadId": notepad_id,
-                                "count": count
-                            });
-                            let msg = Message::Text(connect_msg.to_string());
-                            for client_tx in clients_map.values() {
-                                let _ = client_tx.send(msg.clone());
-                            }
+                        println!("Broadcasting user_connected for: {}, total count: {}", uid, count);
+                        let connect_msg = serde_json::json!({
+                            "type": "user_connected",
+                            "userId": uid,
+                            "notepadId": notepad_id,
+                            "count": count
+                        });
+                        let msg = Message::Text(connect_msg.to_string());
+                        for client_tx in clients_map.values() {
+                            let _ = client_tx.send(msg.clone());
                         }
                     }
                 }

@@ -37,10 +37,14 @@ use wasm_bindgen::prelude::*;
         const cursor = document.getElementById('cursor-' + userId);
         if (cursor) cursor.remove();
     }
+    export function dispatch_peer_count(count) {
+        window.dispatchEvent(new CustomEvent('rustpad:peer_count', { detail: count }));
+    }
 ")]
 extern "C" {
     pub fn update_peer_cursor(userId: &str, position: u32, color: &str);
     pub fn remove_peer_cursor(userId: &str);
+    pub fn dispatch_peer_count(count: u32);
 }
 
 pub struct Op {
@@ -133,6 +137,13 @@ pub fn use_collab_websocket(
                     if let Ok(data) = serde_json::from_str::<serde_json::Value>(&text) {
                         let msg_type = data.get("type").and_then(|v| v.as_str());
                         let peer_id = data.get("userId").and_then(|v| v.as_str()).unwrap_or("");
+                        
+                        if msg_type == Some("user_connected") || msg_type == Some("user_disconnected") {
+                            if let Some(count) = data.get("count").and_then(|v| v.as_u64()) {
+                                dispatch_peer_count(count as u32);
+                            }
+                        }
+
                         if peer_id == uid_incoming { continue; }
                         
                         if msg_type == Some("operation") {
@@ -183,7 +194,10 @@ pub fn use_collab_websocket(
             });
         }
         let uid_cleanup = uid.clone();
-        move || { remove_peer_cursor(&uid_cleanup); }
+        move || { 
+            remove_peer_cursor(&uid_cleanup); 
+            dispatch_peer_count(1);
+        }
     });
     
     let uid = (*user_id).clone();

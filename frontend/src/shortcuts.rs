@@ -4,12 +4,14 @@ use wasm_bindgen::JsCast;
 pub fn register_keyboard_shortcuts(
     authenticated: UseStateHandle<bool>,
     search_open: UseStateHandle<bool>,
+    shortcuts_open: UseStateHandle<bool>,
     preview_mode: UseStateHandle<String>,
     on_new_notepad: Callback<MouseEvent>,
 ) {
     use_effect_with((*authenticated).clone(), move |&auth| {
         let on_keydown = if auth {
             let search_open = search_open.clone();
+            let shortcuts_open = shortcuts_open.clone();
             let preview_mode = preview_mode.clone();
             let on_new_notepad = on_new_notepad.clone();
             
@@ -19,7 +21,18 @@ pub fn register_keyboard_shortcuts(
                 let shift = e.shift_key();
                 let key = e.key();
 
-                if ctrl && key == "f" {
+                if key == "?" {
+                    if let Some(target) = e.target() {
+                        if let Some(el) = target.dyn_ref::<web_sys::HtmlElement>() {
+                            let tag = el.tag_name().to_lowercase();
+                            if tag == "input" || tag == "textarea" {
+                                return;
+                            }
+                        }
+                    }
+                    e.prevent_default();
+                    shortcuts_open.set(!*shortcuts_open);
+                } else if ctrl && key == "f" {
                     e.prevent_default();
                     search_open.set(true);
                 } else if ctrl && shift && key.to_lowercase() == "p" {

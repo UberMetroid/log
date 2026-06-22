@@ -6,6 +6,8 @@ use gloo_timers::callback::Timeout;
 use crate::services::ApiService;
 use crate::preview::Preview;
 use crate::collab::use_collab_websocket;
+use crate::toolbar::{Toolbar, apply_format};
+
 #[derive(Properties, PartialEq)]
 pub struct EditorProps {
     pub notepad_id: String,
@@ -13,6 +15,16 @@ pub struct EditorProps {
     pub save_interval: u64,
     pub disable_print_expand: bool,
 }
+
+fn save_notepad(id: String, content: String, status: UseStateHandle<String>) {
+    status.set("saving".to_string());
+    spawn_local(async move {
+        if ApiService::save_notes(&id, &content).await.is_ok() {
+            status.set("saved".to_string());
+        }
+    });
+}
+
 #[function_component(Editor)]
 pub fn editor(props: &EditorProps) -> Html {
     let content = use_state(|| "".to_string());
@@ -21,6 +33,7 @@ pub fn editor(props: &EditorProps) -> Html {
     let editor_ref = use_node_ref();
     let save_status = use_state(|| "saved".to_string());
     let copy_status = use_state(|| "idle".to_string());
+
     {
         let content = content.clone();
         let last_id = last_loaded_id.clone();
@@ -41,28 +54,12 @@ pub fn editor(props: &EditorProps) -> Html {
     let (on_local_change, on_cursor_move) = use_collab_websocket(&props.notepad_id, content.clone(), editor_ref.clone());
 
     let on_keydown = {
-        let notepad_id = props.notepad_id.clone();
-        let timer_ref = debounce_timer.clone();
-        let save_status = save_status.clone();
-        let content = content.clone();
-        
+        let (nid, timer, status, content) = (props.notepad_id.clone(), debounce_timer.clone(), save_status.clone(), content.clone());
         Callback::from(move |e: KeyboardEvent| {
-            let ctrl = e.ctrl_key() || e.meta_key();
-            let key = e.key();
-            if ctrl && key.to_lowercase() == "s" {
+            if (e.ctrl_key() || e.meta_key()) && e.key().to_lowercase() == "s" {
                 e.prevent_default();
-                if let Some(t) = timer_ref.borrow_mut().take() {
-                    t.cancel();
-                }
-                let nid = notepad_id.clone();
-                let save_val = (*content).clone();
-                let status = save_status.clone();
-                status.set("saving".to_string());
-                spawn_local(async move {
-                    if ApiService::save_notes(&nid, &save_val).await.is_ok() {
-                        status.set("saved".to_string());
-                    }
-                });
+                if let Some(t) = timer.borrow_mut().take() { t.cancel(); }
+                save_notepad(nid.clone(), (*content).clone(), status.clone());
             }
         })
     };
@@ -96,36 +93,22 @@ pub fn editor(props: &EditorProps) -> Html {
                 let save_val = val.clone();
                 let status = save_status.clone();
                 let new_timer = Timeout::new(save_interval as u32, move || {
-                    status.set("saving".to_string());
-                    spawn_local(async move {
-                        if ApiService::save_notes(&nid, &save_val).await.is_ok() {
-                            status.set("saved".to_string());
-                        }
-                    });
+                    save_notepad(nid, save_val, status);
                 });
                 *timer_ref.borrow_mut() = Some(new_timer);
             }
         })
     };
 
-    let on_click = {
+    let update_cursor_pos = {
         let r = editor_ref.clone(); let m = on_cursor_move.clone();
-        Callback::from(move |_: MouseEvent| {
+        move || {
             let _ = r.cast::<web_sys::HtmlTextAreaElement>().map(|t| t.selection_start().ok().flatten().map(|p| m.emit(p as usize)));
-        })
+        }
     };
-    let on_keyup = {
-        let r = editor_ref.clone(); let m = on_cursor_move.clone();
-        Callback::from(move |_: KeyboardEvent| {
-            let _ = r.cast::<web_sys::HtmlTextAreaElement>().map(|t| t.selection_start().ok().flatten().map(|p| m.emit(p as usize)));
-        })
-    };
-    let on_scroll = {
-        let r = editor_ref.clone(); let m = on_cursor_move.clone();
-        Callback::from(move |_: Event| {
-            let _ = r.cast::<web_sys::HtmlTextAreaElement>().map(|t| t.selection_start().ok().flatten().map(|p| m.emit(p as usize)));
-        })
-    };
+    let on_click = { let u = update_cursor_pos.clone(); Callback::from(move |_: MouseEvent| u()) };
+    let on_keyup = { let u = update_cursor_pos.clone(); Callback::from(move |_: KeyboardEvent| u()) };
+    let on_scroll = { let u = update_cursor_pos; Callback::from(move |_: Event| u()) };
 
     let on_blur = {
         let notepad_id = props.notepad_id.clone();
@@ -136,55 +119,60 @@ pub fn editor(props: &EditorProps) -> Html {
         Callback::from(move |_| {
             if let Some(t) = timer_ref.borrow_mut().take() {
                 t.cancel();
-                let nid = notepad_id.clone();
-                let save_val = (*content).clone();
-                let status = save_status.clone();
-                status.set("saving".to_string());
-                spawn_local(async move {
-                    if ApiService::save_notes(&nid, &save_val).await.is_ok() {
-                        status.set("saved".to_string());
-                    }
-                });
+                save_notepad(notepad_id.clone(), (*content).clone(), save_status.clone());
+            }
+        })
+    };
+
+    let on_toolbar_click = {
+        let editor_ref = editor_ref.clone();
+        let content = content.clone();
+        let on_local_change = on_local_change.clone();
+        let save_status = save_status.clone();
+        let timer_ref = debounce_timer.clone();
+        let notepad_id = props.notepad_id.clone();
+        let save_interval = props.save_interval;
+        Callback::from(move |format_type: String| {
+            if let Some(textarea) = editor_ref.cast::<web_sys::HtmlTextAreaElement>() {
+                let start = textarea.selection_start().ok().flatten().unwrap_or(0) as usize;
+                let end = textarea.selection_end().ok().flatten().unwrap_or(0) as usize;
+                let old_val = textarea.value();
+                let (new_val, new_start, new_end) = apply_format(&old_val, start, end, &format_type);
+                textarea.set_value(&new_val);
+                on_local_change.emit((old_val, new_val.clone()));
+                content.set(new_val.clone());
+                let _ = textarea.focus();
+                let _ = textarea.set_selection_range(new_start as u32, new_end as u32);
+                save_status.set("unsaved".to_string());
+                if let Some(t) = timer_ref.borrow_mut().take() { t.cancel(); }
+                if save_interval > 0 {
+                    let (nid, s_val, status) = (notepad_id.clone(), new_val, save_status.clone());
+                    *timer_ref.borrow_mut() = Some(Timeout::new(save_interval as u32, move || {
+                        save_notepad(nid, s_val, status);
+                    }));
+                }
             }
         })
     };
 
     let on_copy = {
-        let content = content.clone();
-        let copy_status = copy_status.clone();
-        Callback::from(move |_| {
-            let content_val = (*content).clone();
-            let copy_status = copy_status.clone();
-            if let Some(window) = web_sys::window() {
-                let navigator = window.navigator();
-                let clipboard = navigator.clipboard();
-                let _ = clipboard.write_text(&content_val);
-                copy_status.set("copied".to_string());
-                let copy_status_clone = copy_status.clone();
-                let _ = gloo_timers::callback::Timeout::new(2000, move || {
-                    copy_status_clone.set("idle".to_string());
-                }).forget();
-            }
+        let (c, status) = (content.clone(), copy_status.clone());
+        Callback::from(move |_| if let Some(w) = web_sys::window() {
+            let _ = w.navigator().clipboard().write_text(&c);
+            status.set("copied".to_string());
+            let s = status.clone();
+            let _ = Timeout::new(2000, move || s.set("idle".to_string())).forget();
         })
     };
 
     let on_export = {
-        let content = content.clone();
-        let notepad_id = props.notepad_id.clone();
-        Callback::from(move |_| {
-            let content_val = (*content).clone();
-            let filename = format!("{}.md", notepad_id);
-            if let Some(window) = web_sys::window() {
-                if let Some(document) = window.document() {
-                    let encoded = percent_encoding::utf8_percent_encode(&content_val, percent_encoding::NON_ALPHANUMERIC).to_string();
-                    let href = format!("data:text/markdown;charset=utf-8,{}", encoded);
-                    if let Ok(a) = document.create_element("a") {
-                        let a: web_sys::HtmlElement = a.unchecked_into();
-                        let _ = a.set_attribute("href", &href);
-                        let _ = a.set_attribute("download", &filename);
-                        a.click();
-                    }
-                }
+        let (c, nid) = (content.clone(), props.notepad_id.clone());
+        Callback::from(move |_| if let Some(d) = web_sys::window().and_then(|w| w.document()) {
+            let encoded = percent_encoding::utf8_percent_encode(&c, percent_encoding::NON_ALPHANUMERIC).to_string();
+            if let Ok(a) = d.create_element("a").map(|a| a.unchecked_into::<web_sys::HtmlElement>()) {
+                let _ = a.set_attribute("href", &format!("data:text/markdown;charset=utf-8,{}", encoded));
+                let _ = a.set_attribute("download", &format!("{}.md", nid));
+                a.click();
             }
         })
     };
@@ -202,6 +190,7 @@ pub fn editor(props: &EditorProps) -> Html {
         <div id="editor-preview-wrapper" class="editor-preview-wrapper">
             if show_editor {
                 <div id="editor-container" class={classes!("editor-container", if props.preview_mode == "split" { Some("split-view") } else { None })}>
+                    <Toolbar on_click={on_toolbar_click} />
                     <textarea 
                         id="editor" 
                         ref={editor_ref}
