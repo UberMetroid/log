@@ -42,10 +42,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version from Cargo.toml
+      - name: Extract version from backend/Cargo.toml
         id: package_version
         run: |
-          VERSION=$(grep -m 1 '^version = ' Cargo.toml | cut -d '"' -f 2)
+          VERSION=$(grep -m 1 '^version = ' backend/Cargo.toml | cut -d '"' -f 2)
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
 
@@ -69,7 +69,7 @@ jobs:
           fi
 
       - name: Build and Push Multi-Platform Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: ${{ env.PLATFORMS }}
