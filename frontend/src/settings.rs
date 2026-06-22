@@ -95,13 +95,22 @@ pub fn settings_modal(props: &SettingsModalProps) -> Html {
         })
     };
 
+    let locale = use_context::<crate::i18n::LocaleContext>().unwrap();
+    let on_lang_change = {
+        let locale = locale.clone();
+        Callback::from(move |e: Event| {
+            let select: web_sys::HtmlSelectElement = e.target_unchecked_into();
+            locale.on_change.emit(select.value());
+        })
+    };
+
     html! {
         <div id="settings-modal" class="modal visible">
             <div class="modal-content">
-                <h2>{"Settings"}</h2>
+                <h2>{locale.t("settings_title")}</h2>
                 <div class="settings-form">
                     <label class="settings-label">
-                        {"Status Message Timing (ms) - Autosave:"}
+                        {locale.t("settings_save_interval")}
                         <input 
                             id="autosave-status-interval-input" 
                             class="modal-input" 
@@ -109,7 +118,7 @@ pub fn settings_modal(props: &SettingsModalProps) -> Html {
                             min="0" 
                             value={settings.save_status_message_interval.to_string()} 
                             oninput={on_interval_input}
-                            placeholder="Leave empty or 0 to disable messages" 
+                            placeholder="ms" 
                         />
                     </label>
                     <label class="settings-label">
@@ -122,7 +131,14 @@ pub fn settings_modal(props: &SettingsModalProps) -> Html {
                         />
                     </label>
                     <label class="settings-label">
-                        {"Default preview mode:"}
+                        {locale.t("settings_lang")}
+                        <select class="modal-input" onchange={on_lang_change} value={locale.current.clone()} style="margin-top: 0.5rem; width: 100%;">
+                            <option value="en">{"English"}</option>
+                            <option value="es">{"Español"}</option>
+                        </select>
+                    </label>
+                    <label class="settings-label">
+                        {locale.t("settings_preview")}
                         <div style="margin-top: 0.5rem; display: flex; gap: 1rem;">
                             <label style="display: flex; align-items: center; gap: 0.5rem;">
                                 <input 
@@ -132,7 +148,7 @@ pub fn settings_modal(props: &SettingsModalProps) -> Html {
                                     checked={settings.default_markdown_preview_mode == "off"}
                                     onclick={let m_c = on_preview_mode_change.clone(); move |_| m_c.emit("off".to_string())}
                                 />
-                                {"Editor"}
+                                {locale.t("prev_editor")}
                             </label>
                             <label style="display: flex; align-items: center; gap: 0.5rem;">
                                 <input 
@@ -142,7 +158,7 @@ pub fn settings_modal(props: &SettingsModalProps) -> Html {
                                     checked={settings.default_markdown_preview_mode == "split"}
                                     onclick={let m_c = on_preview_mode_change.clone(); move |_| m_c.emit("split".to_string())}
                                 />
-                                {"Split"}
+                                {locale.t("prev_split")}
                             </label>
                             <label style="display: flex; align-items: center; gap: 0.5rem;">
                                 <input 
@@ -152,12 +168,12 @@ pub fn settings_modal(props: &SettingsModalProps) -> Html {
                                     checked={settings.default_markdown_preview_mode == "preview-only"}
                                     onclick={let m_c = on_preview_mode_change.clone(); move |_| m_c.emit("preview-only".to_string())}
                                 />
-                                {"Full"}
+                                {locale.t("prev_preview")}
                             </label>
                         </div>
                     </label>
                     <label class="settings-label">
-                        {"Disable auto-expand markdown in print:"}
+                        {locale.t("settings_disable_print")}
                         <input 
                             type="checkbox" 
                             id="settings-disable-print-expand" 
@@ -167,9 +183,9 @@ pub fn settings_modal(props: &SettingsModalProps) -> Html {
                     </label>
                 </div>
                 <div class="modal-buttons">
-                    <button id="settings-cancel" onclick={on_close}>{"Cancel"}</button>
-                    <button id="settings-reset" class="danger" onclick={on_reset}>{"Reset"}</button>
-                    <button id="settings-save" onclick={on_save}>{"Save"}</button>
+                    <button id="settings-cancel" onclick={on_close}>{locale.t("cancel")}</button>
+                    <button id="settings-reset" class="danger" onclick={on_reset}>{locale.t("reset")}</button>
+                    <button id="settings-save" onclick={on_save}>{locale.t("settings_save")}</button>
                 </div>
             </div>
         </div>

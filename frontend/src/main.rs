@@ -1,16 +1,7 @@
-mod types;
-mod services;
-mod login;
-mod settings;
-mod preview;
-mod search;
-mod editor;
-mod modals;
-mod shortcuts;
-mod collab;
-mod collab_utils;
-mod header;
-mod toolbar;
+mod types; mod services; mod login; mod settings; mod preview; mod search;
+mod editor; mod modals; mod shortcuts; mod collab; mod collab_utils; mod header;
+mod toolbar; mod i18n;
+
 use yew::prelude::*;
 use shortcuts::register_keyboard_shortcuts;
 use wasm_bindgen_futures::spawn_local;
@@ -38,6 +29,7 @@ pub fn app() -> Html {
     let shortcuts_open = use_state(|| false);
     let app_version = use_state(|| "1.0.6".to_string());
     let theme = use_state(StorageService::get_theme);
+    let locale_state = use_state(i18n::get_saved_locale);
 
     {
         let authenticated = authenticated.clone();
@@ -50,9 +42,7 @@ pub fn app() -> Html {
         use_effect_with((*authenticated).clone(), move |&auth| {
             if auth {
                 spawn_local(async move {
-                    if let Ok(config) = ApiService::get_config().await {
-                        version.set(config.version);
-                    }
+                    if let Ok(config) = ApiService::get_config().await { version.set(config.version); }
                     if let Ok(res) = ApiService::get_notepads().await {
                         notepads.set(res.notepads_list);
                         active_id.set(res.note_history);
@@ -88,9 +78,23 @@ pub fn app() -> Html {
         on_new_notepad.clone(),
     );
 
+    let locale_on_change = {
+        let ls = locale_state.clone();
+        Callback::from(move |new_lang: String| {
+            i18n::set_saved_locale(&new_lang);
+            ls.set(new_lang);
+        })
+    };
+    let locale_context = i18n::LocaleContext {
+        current: (*locale_state).clone(),
+        on_change: locale_on_change,
+    };
+
     if !*authenticated {
         return html! {
-            <Login on_login_success={Callback::from(move |_| authenticated.set(true))} />
+            <ContextProvider<i18n::LocaleContext> context={locale_context}>
+                <Login on_login_success={Callback::from(move |_| authenticated.set(true))} />
+            </ContextProvider<i18n::LocaleContext>>
         };
     }
 
@@ -133,11 +137,7 @@ pub fn app() -> Html {
         let theme = theme.clone();
         Callback::from(move |_| {
             let next = match theme.as_str() {
-                "light" => "dark",
-                "dark" => "nord",
-                "nord" => "dracula",
-                "dracula" => "sepia",
-                _ => "light",
+                "light" => "dark", "dark" => "nord", "nord" => "dracula", "dracula" => "sepia", _ => "light",
             };
             StorageService::set_theme(next);
             let _ = window().and_then(|w| w.document()).and_then(|d| d.document_element()).map(|r| r.set_attribute("data-theme", next));
@@ -163,72 +163,69 @@ pub fn app() -> Html {
     };
 
     let active_name = notepads.iter().find(|n| n.id == *active_notepad_id).map(|n| n.name.clone()).unwrap_or_else(|| "default".to_string());
-
     let (nid_val, notes_val, ver_val, prev_val) = ((*active_notepad_id).clone(), (*notepads).clone(), (*app_version).clone(), (*preview_mode).clone());
-    let on_rename_click = { let r = rename_open.clone(); Callback::from(move |_| r.set(true)) };
-    let on_delete_click = { let d = delete_open.clone(); Callback::from(move |_| d.set(true)) };
+    
     let on_preview_toggle = {
         let p = preview_mode.clone();
         Callback::from(move |_| p.set(match p.as_str() { "off" => "split", "split" => "preview-only", _ => "off" }.to_string()))
     };
-    let on_search_open = { let s = search_open.clone(); Callback::from(move |_| s.set(true)) };
-    let on_settings_open = { let s = settings_open.clone(); Callback::from(move |_| s.set(true)) };
-    let on_shortcuts_open = { let s = shortcuts_open.clone(); Callback::from(move |_| s.set(true)) };
 
     html! {
-        <div class="container">
-            <link rel="stylesheet" href={theme_stylesheet_url} />
-            <Header 
-                active_notepad_id={nid_val}
-                notepads={notes_val}
-                on_notepad_select={on_notepad_select}
-                on_new_notepad={on_new_notepad}
-                on_rename={on_rename_click}
-                on_delete={on_delete_click}
-                preview_mode={prev_val}
-                on_preview_toggle={on_preview_toggle}
-                app_version={ver_val}
-                on_search_open={on_search_open}
-                on_settings_open={on_settings_open}
-                on_shortcuts_open={on_shortcuts_open}
-                toggle_theme={toggle_theme}
-                on_logout={on_logout}
-                current_theme={(*theme).clone()}
-            />
-            <main>
-                <Editor 
-                    notepad_id={(*active_notepad_id).clone()}
-                    preview_mode={(*preview_mode).clone()}
-                    save_interval={settings.save_status_message_interval}
-                    disable_print_expand={settings.disable_print_expand}
+        <ContextProvider<i18n::LocaleContext> context={locale_context}>
+            <div class="container">
+                <link rel="stylesheet" href={theme_stylesheet_url} />
+                <Header 
+                    active_notepad_id={nid_val}
+                    notepads={notes_val}
+                    on_notepad_select={on_notepad_select}
+                    on_new_notepad={on_new_notepad}
+                    on_rename={let r = rename_open.clone(); Callback::from(move |_| r.set(true))}
+                    on_delete={let d = delete_open.clone(); Callback::from(move |_| d.set(true))}
+                    preview_mode={prev_val}
+                    on_preview_toggle={on_preview_toggle}
+                    app_version={ver_val}
+                    on_search_open={let s = search_open.clone(); Callback::from(move |_| s.set(true))}
+                    on_settings_open={let s = settings_open.clone(); Callback::from(move |_| s.set(true))}
+                    on_shortcuts_open={let s = shortcuts_open.clone(); Callback::from(move |_| s.set(true))}
+                    toggle_theme={toggle_theme}
+                    on_logout={on_logout}
+                    current_theme={(*theme).clone()}
                 />
-            </main>
-            <SearchModal 
-                is_open={*search_open}
-                on_close={let s = search_open.clone(); Callback::from(move |_| s.set(false))}
-                on_select={let active_id = active_notepad_id.clone(); Callback::from(move |id| active_id.set(id))}
-            />
-            <SettingsModal 
-                is_open={*settings_open}
-                on_close={let s = settings_open.clone(); Callback::from(move |_| s.set(false))}
-                on_save={let s = settings.clone(); Callback::from(move |new_s| s.set(new_s))}
-            />
-            <RenameModal 
-                is_open={*rename_open}
-                initial_value={active_name.clone()}
-                on_close={let r = rename_open.clone(); Callback::from(move |_| r.set(false))}
-                on_confirm={on_rename_confirm}
-            />
-            <DeleteModal 
-                is_open={*delete_open}
-                on_close={let d = delete_open.clone(); Callback::from(move |_| d.set(false))}
-                on_confirm={on_delete_confirm}
-            />
-            <ShortcutsModal 
-                is_open={*shortcuts_open}
-                on_close={let s = shortcuts_open.clone(); Callback::from(move |_| s.set(false))}
-            />
-        </div>
+                <main>
+                    <Editor 
+                        notepad_id={(*active_notepad_id).clone()}
+                        preview_mode={(*preview_mode).clone()}
+                        save_interval={settings.save_status_message_interval}
+                        disable_print_expand={settings.disable_print_expand}
+                    />
+                </main>
+                <SearchModal 
+                    is_open={*search_open}
+                    on_close={let s = search_open.clone(); Callback::from(move |_| s.set(false))}
+                    on_select={let active_id = active_notepad_id.clone(); Callback::from(move |id| active_id.set(id))}
+                />
+                <SettingsModal 
+                    is_open={*settings_open}
+                    on_close={let s = settings_open.clone(); Callback::from(move |_| s.set(false))}
+                    on_save={let s = settings.clone(); Callback::from(move |new_s| s.set(new_s))}
+                />
+                <RenameModal 
+                    is_open={*rename_open}
+                    initial_value={active_name.clone()}
+                    on_close={let r = rename_open.clone(); Callback::from(move |_| r.set(false))}
+                    on_confirm={on_rename_confirm}
+                />
+                <DeleteModal 
+                    is_open={*delete_open}
+                    on_close={let d = delete_open.clone(); Callback::from(move |_| d.set(false))}
+                    on_confirm={on_delete_confirm}
+                />
+                <ShortcutsModal 
+                    is_open={*shortcuts_open}
+                    on_close={let s = shortcuts_open.clone(); Callback::from(move |_| s.set(false))}
+                />
+            </div>
+        </ContextProvider<i18n::LocaleContext>>
     }
 }
 

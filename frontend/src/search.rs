@@ -15,6 +15,7 @@ pub fn search_modal(props: &SearchModalProps) -> Html {
     let query = use_state(|| "".to_string());
     let results = use_state(|| Vec::<SearchItem>::new());
     let search_input_ref = use_node_ref();
+    let locale = use_context::<crate::i18n::LocaleContext>().unwrap();
 
     {
         let is_open = props.is_open;
@@ -90,7 +91,7 @@ pub fn search_modal(props: &SearchModalProps) -> Html {
                     type="text" 
                     id="search-box" 
                     ref={search_input_ref}
-                    placeholder="Search notes..." 
+                    placeholder={locale.t("search_placeholder")} 
                     value={(*query).clone()}
                     oninput={on_input}
                     onkeydown={on_keydown}

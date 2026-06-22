@@ -25,6 +25,7 @@ pub struct HeaderProps {
 #[function_component(Header)]
 pub fn header(props: &HeaderProps) -> Html {
     let peer_count = use_state(|| 1u32);
+    let locale = use_context::<crate::i18n::LocaleContext>().unwrap();
 
     {
         let peer_count = peer_count.clone();
@@ -62,24 +63,24 @@ pub fn header(props: &HeaderProps) -> Html {
             <svg id="sun-icon" class="sun" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="M4.93 4.93l1.41 1.41" /><path d="M17.66 17.66l1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="M6.34 17.66l-1.41 1.41" /><path d="M19.07 4.93l-1.41 1.41" /></svg>
         },
     };
-
+ 
     let peer_count_val = *peer_count;
     let peers_badge = if peer_count_val > 1 {
         html! {
             <span class="active-peers-badge" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 4px 8px; border-radius: 9999px; font-weight: 600; margin-left: 10px; border: 1px solid rgba(16, 185, 129, 0.3);">
                 <span class="pulse-dot" style="width: 6px; height: 6px; background-color: #10b981; border-radius: 50%; display: inline-block;"></span>
-                {format!("{} online", peer_count_val)}
+                {format!("{} {}", peer_count_val, locale.t("online"))}
             </span>
         }
     } else {
         html! {}
     };
-
+ 
     html! {
         <header>
             <div class="notepad-controls">
                 <div class="select-wrapper">
-                    <button id="new-notepad" class="icon-button" onclick={props.on_new_notepad.clone()} aria-label="Create new notepad">
+                    <button id="new-notepad" class="icon-button" onclick={props.on_new_notepad.clone()} aria-label={locale.t("new_pad")} data-tooltip={locale.t("new_pad")}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </button>
                     <select id="notepad-selector" onchange={props.on_notepad_select.clone()} value={props.active_notepad_id.clone()}>
@@ -91,10 +92,10 @@ pub fn header(props: &HeaderProps) -> Html {
                     </select>
                 </div>
                 <div class="notepad-controls-wrapper">
-                    <button id="rename-notepad" class="icon-button" onclick={props.on_rename.clone()}>
+                    <button id="rename-notepad" class="icon-button" onclick={props.on_rename.clone()} data-tooltip={locale.t("rename")}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                     </button>
-                    <button id="delete-notepad" class="icon-button" onclick={props.on_delete.clone()}>
+                    <button id="delete-notepad" class="icon-button" onclick={props.on_delete.clone()} data-tooltip={locale.t("delete")}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                     </button>
                     <button id="preview-markdown" class="icon-button" onclick={props.on_preview_toggle.clone()}>
@@ -107,19 +108,19 @@ pub fn header(props: &HeaderProps) -> Html {
                 {peers_badge}
             </div>
             <div class="header-right">
-                <button id="shortcuts-button" class="icon-button" onclick={props.on_shortcuts_open.clone()} data-tooltip="Keyboard Shortcuts Help">
+                <button id="shortcuts-button" class="icon-button" onclick={props.on_shortcuts_open.clone()} data-tooltip={locale.t("shortcuts")}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </button>
-                <button id="search-open" class="icon-button" onclick={props.on_search_open.clone()} data-tooltip="Search">
+                <button id="search-open" class="icon-button" onclick={props.on_search_open.clone()} data-tooltip={locale.t("search_btn")}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
                 </button>
-                <button id="settings-button" class="icon-button" onclick={props.on_settings_open.clone()} data-tooltip="Settings">
+                <button id="settings-button" class="icon-button" onclick={props.on_settings_open.clone()} data-tooltip={locale.t("settings")}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 6l8 0" /><path d="M16 6l4 0" /><path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 12l2 0" /><path d="M10 12l10 0" /><path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 18l11 0" /><path d="M19 18l1 0" /></svg>
                 </button>
                 <button id="theme-toggle" class="icon-button" onclick={props.toggle_theme.clone()}>
                     {theme_toggle_icon}
                 </button>
-                <button id="logout-button" class="icon-button" onclick={props.on_logout.clone()} data-tooltip="Log Out">
+                <button id="logout-button" class="icon-button" onclick={props.on_logout.clone()} data-tooltip={locale.t("logout")}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
                 </button>
             </div>

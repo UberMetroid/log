@@ -15,6 +15,7 @@ pub fn login(props: &LoginProps) -> Html {
     let pin_length = use_state(|| 4);
     let theme = use_state(StorageService::get_theme);
     let input_ref = use_node_ref();
+    let locale = use_context::<crate::i18n::LocaleContext>().unwrap();
 
     {
         let input_ref = input_ref.clone();
@@ -171,8 +172,8 @@ pub fn login(props: &LoginProps) -> Html {
             <div id="login-content">
                 <div class="pin-header">
                     <h1 id="site-title">{"RustPad"}</h1>
-                    <h2 id="pin-description">
-                        {if *is_locked { "Locked Out" } else { "Enter PIN" }}
+                    <h2 id="pin-description" style="font-size: 0.95rem; line-height: 1.4;">
+                        {if *is_locked { locale.t("login_locked") } else { locale.t("login_prompt") }}
                     </h2>
                 </div>
                 <form id="pin-form" onsubmit={on_submit}>

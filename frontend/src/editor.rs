@@ -2,11 +2,7 @@ use yew::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use gloo_timers::callback::Timeout;
-
-use crate::services::ApiService;
-use crate::preview::Preview;
-use crate::collab::use_collab_websocket;
-use crate::toolbar::{Toolbar, apply_format};
+use crate::{services::ApiService, preview::Preview, collab::use_collab_websocket, toolbar::{Toolbar, apply_format}};
 
 #[derive(Properties, PartialEq)]
 pub struct EditorProps {
@@ -19,9 +15,7 @@ pub struct EditorProps {
 fn save_notepad(id: String, content: String, status: UseStateHandle<String>) {
     status.set("saving".to_string());
     spawn_local(async move {
-        if ApiService::save_notes(&id, &content).await.is_ok() {
-            status.set("saved".to_string());
-        }
+        if ApiService::save_notes(&id, &content).await.is_ok() { status.set("saved".to_string()); }
     });
 }
 
@@ -33,6 +27,7 @@ pub fn editor(props: &EditorProps) -> Html {
     let editor_ref = use_node_ref();
     let save_status = use_state(|| "saved".to_string());
     let copy_status = use_state(|| "idle".to_string());
+    let locale = use_context::<crate::i18n::LocaleContext>().unwrap();
 
     {
         let content = content.clone();
@@ -78,23 +73,15 @@ pub fn editor(props: &EditorProps) -> Html {
             let val = textarea.value();
             let old_val = (*content).clone();
             on_local_change.emit((old_val, val.clone()));
-            if let Some(pos) = textarea.selection_start().ok().flatten() {
-                on_cursor_move.emit(pos as usize);
-            }
+            if let Some(pos) = textarea.selection_start().ok().flatten() { on_cursor_move.emit(pos as usize); }
             content.set(val.clone());
             save_status.set("unsaved".to_string());
-            
-            if let Some(t) = timer_ref.borrow_mut().take() {
-                t.cancel();
-            }
-            
+            if let Some(t) = timer_ref.borrow_mut().take() { t.cancel(); }
             if save_interval > 0 {
                 let nid = notepad_id.clone();
                 let save_val = val.clone();
                 let status = save_status.clone();
-                let new_timer = Timeout::new(save_interval as u32, move || {
-                    save_notepad(nid, save_val, status);
-                });
+                let new_timer = Timeout::new(save_interval as u32, move || { save_notepad(nid, save_val, status); });
                 *timer_ref.borrow_mut() = Some(new_timer);
             }
         })
@@ -102,9 +89,7 @@ pub fn editor(props: &EditorProps) -> Html {
 
     let update_cursor_pos = {
         let r = editor_ref.clone(); let m = on_cursor_move.clone();
-        move || {
-            let _ = r.cast::<web_sys::HtmlTextAreaElement>().map(|t| t.selection_start().ok().flatten().map(|p| m.emit(p as usize)));
-        }
+        move || { let _ = r.cast::<web_sys::HtmlTextAreaElement>().map(|t| t.selection_start().ok().flatten().map(|p| m.emit(p as usize))); }
     };
     let on_click = { let u = update_cursor_pos.clone(); Callback::from(move |_: MouseEvent| u()) };
     let on_keyup = { let u = update_cursor_pos.clone(); Callback::from(move |_: KeyboardEvent| u()) };
@@ -115,7 +100,6 @@ pub fn editor(props: &EditorProps) -> Html {
         let content = content.clone();
         let timer_ref = debounce_timer.clone();
         let save_status = save_status.clone();
-        
         Callback::from(move |_| {
             if let Some(t) = timer_ref.borrow_mut().take() {
                 t.cancel();
@@ -147,9 +131,7 @@ pub fn editor(props: &EditorProps) -> Html {
                 if let Some(t) = timer_ref.borrow_mut().take() { t.cancel(); }
                 if save_interval > 0 {
                     let (nid, s_val, status) = (notepad_id.clone(), new_val, save_status.clone());
-                    *timer_ref.borrow_mut() = Some(Timeout::new(save_interval as u32, move || {
-                        save_notepad(nid, s_val, status);
-                    }));
+                    *timer_ref.borrow_mut() = Some(Timeout::new(save_interval as u32, move || { save_notepad(nid, s_val, status); }));
                 }
             }
         })
@@ -178,9 +160,9 @@ pub fn editor(props: &EditorProps) -> Html {
     };
 
     let (copy_icon, copy_text_style, copy_text) = if *copy_status == "copied" {
-        (html! { <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; color: #10b981;"><polyline points="20 6 9 17 4 12"></polyline></svg> }, Some("color: #10b981;"), "Copied!")
+        (html! { <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; color: #10b981;"><polyline points="20 6 9 17 4 12"></polyline></svg> }, Some("color: #10b981;"), locale.t("copied"))
     } else {
-        (html! { <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> }, None, "Copy")
+        (html! { <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> }, None, locale.t("copy"))
     };
 
     let show_editor = props.preview_mode != "preview-only";
@@ -200,7 +182,7 @@ pub fn editor(props: &EditorProps) -> Html {
                     <textarea 
                         id="editor" 
                         ref={editor_ref}
-                        placeholder="Start typing your notes here..." 
+                        placeholder={locale.t("placeholder")} 
                         spellcheck="true" 
                         value={(*content).clone()}
                         oninput={on_input}
@@ -212,32 +194,28 @@ pub fn editor(props: &EditorProps) -> Html {
                         autofocus=true
                     />
                     <div class="editor-actions">
-                        <button class="action-button copy-button" onclick={on_copy} data-tooltip="Copy Markdown">
+                        <button class="action-button copy-button" onclick={on_copy} data-tooltip={locale.t("copy")}>
                             {copy_icon}
                             <span style={copy_text_style}>{copy_text}</span>
                         </button>
-                        <button class="action-button export-button" onclick={on_export} data-tooltip="Export Markdown">
+                        <button class="action-button export-button" onclick={on_export} data-tooltip={locale.t("export")}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            <span>{"Export"}</span>
+                            <span>{locale.t("export")}</span>
                         </button>
                     </div>
                     <div class={classes!("save-status", (*save_status).clone())}>
                         {
                             match save_status.as_str() {
-                                "unsaved" => html! { <>{"● "}{"Unsaved changes"}</> },
-                                "saving" => html! { <>{"◌ "}{"Saving..."}</> },
-                                _ => html! { <>{"✓ "}{"Saved"}</> },
+                                "unsaved" => html! { <>{"● "}{locale.t("unsaved_changes")}</> },
+                                "saving" => html! { <>{"◌ "}{locale.t("saving")}</> },
+                                _ => html! { <>{"✓ "}{locale.t("saved")}</> },
                             }
                         }
                     </div>
                 </div>
             }
-            
             if show_preview {
-                <Preview 
-                    content={(*content).clone()} 
-                    is_visible={show_preview} 
-                />
+                <Preview content={(*content).clone()} is_visible={show_preview} />
             }
         </div>
     }
