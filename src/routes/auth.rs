@@ -10,7 +10,7 @@ use std::time::Duration;
 use tokio::fs;
 
 use crate::state::AppState;
-use crate::utils::{get_client_ip, secure_compare};
+use crate::utils::{get_client_ip, secure_compare, hash_pin};
 
 pub const COOKIE_NAME: &str = "rustpad_auth";
 
@@ -33,7 +33,7 @@ pub fn is_authenticated(jar: &CookieJar, state: &AppState) -> bool {
         None => return true,
     };
     if let Some(cookie) = jar.get(COOKIE_NAME) {
-        secure_compare(cookie.value(), pin)
+        secure_compare(cookie.value(), &hash_pin(pin))
     } else {
         false
     }
@@ -202,7 +202,8 @@ pub async fn verify_pin(
             .into_response();
     }
 
-    if secure_compare(&payload.pin, expected_pin) {
+    let hashed_payload_pin = hash_pin(&payload.pin);
+    if secure_compare(&hashed_payload_pin, &hash_pin(expected_pin)) {
         state.reset_login_attempts(ip).await;
 
         let cookie_max_age = Duration::from_secs((state.config.cookie_max_age_hours * 3600) as u64);
@@ -212,7 +213,7 @@ pub async fn verify_pin(
             && state.config.node_env == "production";
 
         let jar = jar.add(
-            Cookie::build((COOKIE_NAME, payload.pin))
+            Cookie::build((COOKIE_NAME, hashed_payload_pin))
                 .path("/")
                 .http_only(true)
                 .secure(secure)

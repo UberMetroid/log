@@ -23,6 +23,7 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 ipnet = "2.9"
 percent-encoding = "2.3"
+sha2 = "0.10"
 
 [workspace]
 members = [

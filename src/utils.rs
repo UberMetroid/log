@@ -1,6 +1,15 @@
 use std::net::{IpAddr, SocketAddr};
 use axum::http::HeaderMap;
 use ipnet::IpNet;
+use sha2::{Sha256, Digest};
+
+/// Hash a string slice using SHA-256 and return its hex representation
+pub fn hash_pin(pin: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(pin.as_bytes());
+    let result = hasher.finalize();
+    format!("{:x}", result)
+}
 
 /// Constant-time string comparison to prevent timing attacks
 pub fn secure_compare(a: &str, b: &str) -> bool {
