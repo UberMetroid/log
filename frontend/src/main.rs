@@ -36,6 +36,7 @@ pub fn app() -> Html {
     let delete_open = use_state(|| false);
     let shortcuts_open = use_state(|| false);
     let app_version = use_state(|| "1.0.5".to_string());
+    let theme = use_state(StorageService::get_theme);
 
     {
         let authenticated = authenticated.clone();
@@ -127,17 +128,21 @@ pub fn app() -> Html {
         })
     };
 
-    let toggle_theme = Callback::from(move |_| {
-        let next = match StorageService::get_theme().as_str() {
-            "light" => "dark",
-            "dark" => "nord",
-            "nord" => "dracula",
-            "dracula" => "sepia",
-            _ => "light",
-        };
-        StorageService::set_theme(next);
-        let _ = window().and_then(|w| w.document()).and_then(|d| d.document_element()).map(|r| r.set_attribute("data-theme", next));
-    });
+    let toggle_theme = {
+        let theme = theme.clone();
+        Callback::from(move |_| {
+            let next = match theme.as_str() {
+                "light" => "dark",
+                "dark" => "nord",
+                "nord" => "dracula",
+                "dracula" => "sepia",
+                _ => "light",
+            };
+            StorageService::set_theme(next);
+            let _ = window().and_then(|w| w.document()).and_then(|d| d.document_element()).map(|r| r.set_attribute("data-theme", next));
+            theme.set(next.to_string());
+        })
+    };
 
     let on_logout = {
         let auth = authenticated.clone();
@@ -187,6 +192,7 @@ pub fn app() -> Html {
                 on_shortcuts_open={on_shortcuts_open}
                 toggle_theme={toggle_theme}
                 on_logout={on_logout}
+                current_theme={(*theme).clone()}
             />
             <main>
                 <Editor 

@@ -2,7 +2,6 @@ use yew::prelude::*;
 use crate::types::Notepad;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use crate::services::StorageService;
 
 #[derive(Properties, PartialEq)]
 pub struct HeaderProps {
@@ -20,6 +19,7 @@ pub struct HeaderProps {
     pub on_shortcuts_open: Callback<MouseEvent>,
     pub toggle_theme: Callback<MouseEvent>,
     pub on_logout: Callback<MouseEvent>,
+    pub current_theme: String,
 }
 
 #[function_component(Header)]
@@ -44,7 +44,7 @@ pub fn header(props: &HeaderProps) -> Html {
         });
     }
 
-    let current_theme = StorageService::get_theme();
+    let current_theme = &props.current_theme;
     let theme_toggle_icon = match current_theme.as_str() {
         "dark" => html! {
             <svg id="moon-icon" class="moon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" /></svg>
