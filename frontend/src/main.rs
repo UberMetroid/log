@@ -7,11 +7,11 @@ mod search;
 mod editor;
 mod modals;
 mod shortcuts;
+mod collab;
 use yew::prelude::*;
 use shortcuts::register_keyboard_shortcuts;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::window;
-
 use types::Notepad;
 use services::{ApiService, StorageService};
 use login::Login;
@@ -215,26 +215,22 @@ pub fn app() -> Html {
                     disable_print_expand={settings.disable_print_expand}
                 />
             </main>
-            
             <SearchModal 
                 is_open={*search_open}
                 on_close={let s = search_open.clone(); Callback::from(move |_| s.set(false))}
                 on_select={let active_id = active_notepad_id.clone(); Callback::from(move |id| active_id.set(id))}
             />
-            
             <SettingsModal 
                 is_open={*settings_open}
                 on_close={let s = settings_open.clone(); Callback::from(move |_| s.set(false))}
                 on_save={let s = settings.clone(); Callback::from(move |new_s| s.set(new_s))}
             />
-
             <RenameModal 
                 is_open={*rename_open}
                 initial_value={active_name.clone()}
                 on_close={let r = rename_open.clone(); Callback::from(move |_| r.set(false))}
                 on_confirm={on_rename_confirm}
             />
-            
             <DeleteModal 
                 is_open={*delete_open}
                 on_close={let d = delete_open.clone(); Callback::from(move |_| d.set(false))}

@@ -969,3 +969,39 @@ main {
     color: #3b82f6;
     border-color: rgba(59, 130, 246, 0.2);
 }
+
+/* Editor Action Utilities (Copy/Export) */
+.editor-actions {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 1.25rem;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 10;
+}
+
+.action-button {
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    background-color: var(--header-bg);
+    border: 1px solid var(--secondary-color);
+    color: var(--text-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: var(--transition);
+    opacity: 0.85;
+}
+
+.action-button:hover {
+    opacity: 1;
+    border-color: var(--primary-color);
+    background-color: var(--hover-bg);
+}
+
+.action-button svg {
+    flex-shrink: 0;
+}

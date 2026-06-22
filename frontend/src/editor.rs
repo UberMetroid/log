@@ -2,12 +2,10 @@ use yew::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use gloo_timers::callback::Timeout;
-use gloo_net::websocket::futures::WebSocket;
-use futures_util::{SinkExt, StreamExt};
-use serde_json::json;
 
 use crate::services::ApiService;
 use crate::preview::Preview;
+use crate::collab::use_collab_websocket;
 
 #[derive(Properties, PartialEq)]
 pub struct EditorProps {
@@ -24,6 +22,7 @@ pub fn editor(props: &EditorProps) -> Html {
     let debounce_timer = use_mut_ref(|| None::<Timeout>);
     let editor_ref = use_node_ref();
     let save_status = use_state(|| "saved".to_string());
+    let copy_status = use_state(|| "idle".to_string());
 
     {
         let content = content.clone();
@@ -42,39 +41,7 @@ pub fn editor(props: &EditorProps) -> Html {
         });
     }
 
-    {
-        let current_id = props.notepad_id.clone();
-        
-        use_effect_with(current_id.clone(), move |nid| {
-            let nid = nid.clone();
-            let window = web_sys::window().unwrap();
-            let protocol = if window.location().protocol().unwrap() == "https:" { "wss:" } else { "ws:" };
-            let host = window.location().host().unwrap();
-            let ws_url = format!("{}//{}/ws", protocol, host);
-            
-            if let Ok(ws) = WebSocket::open(&ws_url) {
-                let (mut write, mut read) = ws.split();
-                let user_id = format!("user_{}", chrono::Utc::now().timestamp_millis());
-                let init_msg = json!({
-                    "type": "sync_request",
-                    "userId": user_id,
-                    "notepadId": nid
-                }).to_string();
-                
-                spawn_local(async move {
-                    let _ = write.send(gloo_net::websocket::Message::Text(init_msg)).await;
-                });
-                
-                spawn_local(async move {
-                    while let Some(Ok(msg)) = read.next().await {
-                        if let gloo_net::websocket::Message::Text(_) = msg {}
-                    }
-                });
-            }
-            
-            || ()
-        });
-    }
+    use_collab_websocket(&props.notepad_id);
 
     {
         let notepad_id = props.notepad_id.clone();
@@ -181,6 +148,52 @@ pub fn editor(props: &EditorProps) -> Html {
         })
     };
 
+    let on_copy = {
+        let content = content.clone();
+        let copy_status = copy_status.clone();
+        Callback::from(move |_| {
+            let content_val = (*content).clone();
+            let copy_status = copy_status.clone();
+            if let Some(window) = web_sys::window() {
+                let navigator = window.navigator();
+                let clipboard = navigator.clipboard();
+                let _ = clipboard.write_text(&content_val);
+                copy_status.set("copied".to_string());
+                let copy_status_clone = copy_status.clone();
+                let _ = gloo_timers::callback::Timeout::new(2000, move || {
+                    copy_status_clone.set("idle".to_string());
+                }).forget();
+            }
+        })
+    };
+
+    let on_export = {
+        let content = content.clone();
+        let notepad_id = props.notepad_id.clone();
+        Callback::from(move |_| {
+            let content_val = (*content).clone();
+            let filename = format!("{}.md", notepad_id);
+            if let Some(window) = web_sys::window() {
+                if let Some(document) = window.document() {
+                    let encoded = percent_encoding::utf8_percent_encode(&content_val, percent_encoding::NON_ALPHANUMERIC).to_string();
+                    let href = format!("data:text/markdown;charset=utf-8,{}", encoded);
+                    if let Ok(a) = document.create_element("a") {
+                        let a: web_sys::HtmlElement = a.unchecked_into();
+                        let _ = a.set_attribute("href", &href);
+                        let _ = a.set_attribute("download", &filename);
+                        a.click();
+                    }
+                }
+            }
+        })
+    };
+
+    let (copy_icon, copy_text_style, copy_text) = if *copy_status == "copied" {
+        (html! { <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; color: #10b981;"><polyline points="20 6 9 17 4 12"></polyline></svg> }, Some("color: #10b981;"), "Copied!")
+    } else {
+        (html! { <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> }, None, "Copy")
+    };
+
     let show_editor = props.preview_mode != "preview-only";
     let show_preview = props.preview_mode != "off";
 
@@ -198,6 +211,16 @@ pub fn editor(props: &EditorProps) -> Html {
                         onblur={on_blur}
                         autofocus=true
                     />
+                    <div class="editor-actions">
+                        <button class="action-button copy-button" onclick={on_copy} data-tooltip="Copy Markdown">
+                            {copy_icon}
+                            <span style={copy_text_style}>{copy_text}</span>
+                        </button>
+                        <button class="action-button export-button" onclick={on_export} data-tooltip="Export Markdown">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <span>{"Export"}</span>
+                        </button>
+                    </div>
                     <div class={classes!("save-status", (*save_status).clone())}>
                         {
                             match save_status.as_str() {
