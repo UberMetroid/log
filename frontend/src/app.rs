@@ -78,10 +78,13 @@ pub fn app() -> Html {
                 _ => "light",
             };
             StorageService::set_theme(next);
-            let _ = window()
+            if let Some(html) = window()
                 .and_then(|w| w.document())
                 .and_then(|d| d.document_element())
-                .map(|r| r.set_attribute("data-theme", next));
+            {
+                let _ = html.set_attribute("data-theme", next);
+                let _ = html.set_attribute("class", next);
+            }
             theme.set(next.to_string());
         })
     };

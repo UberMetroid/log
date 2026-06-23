@@ -53,6 +53,17 @@ pub fn header(props: &HeaderProps) -> Html {
         ("ru", "Русский"),
     ];
 
+    let theme_toggle_tooltip = match locale.current.as_str() {
+        "zh" => "切换主题",
+        "es" => "Cambiar tema",
+        "de" => "Design umschalten",
+        "ja" => "テーマ切り替え",
+        "fr" => "Changer de thème",
+        "pt" => "Alternar tema",
+        "ru" => "Переключить тему",
+        _ => "Toggle theme",
+    };
+
     html! {
         <header>
             <div id="header-title">
@@ -76,7 +87,7 @@ pub fn header(props: &HeaderProps) -> Html {
                         })}
                     </select>
                 </div>
-                <button id="theme-toggle" class="icon-button" onclick={props.toggle_theme.clone()} aria-label="Toggle theme">
+                <button id="theme-toggle" class="icon-button" onclick={props.toggle_theme.clone()} aria-label="Toggle theme" title={theme_toggle_tooltip}>
                     {theme_toggle_icon}
                 </button>
                 <button
