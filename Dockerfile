@@ -33,6 +33,7 @@ RUN cargo build --release --bin rustpad
 
 # --- Stage 2: Final Runtime Container ---
 FROM alpine:latest
+LABEL org.opencontainers.image.source="https://github.com/UberMetroid/RustPad"
 
 WORKDIR /app
 
