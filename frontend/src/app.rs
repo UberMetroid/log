@@ -101,6 +101,7 @@ pub fn app() -> Html {
         })
     };
 
+    let is_content_empty = use_state(|| true);
     let ver_val = (*app_version).clone();
 
     html! {
@@ -113,6 +114,7 @@ pub fn app() -> Html {
                 current_theme={(*theme).clone()}
                 is_authenticated={*authenticated}
                 is_pin_required={*is_pin_required}
+                disable_print={*is_content_empty}
             />
             <div class="container">
                 {if !*authenticated {
@@ -149,6 +151,7 @@ pub fn app() -> Html {
                                 save_interval={3000}
                                 disable_print_expand={false}
                                 on_status={let active_notif = active_notification.clone(); Callback::from(move |status| active_notif.set(status))}
+                                on_content_empty={let is_empty = is_content_empty.clone(); Callback::from(move |val| is_empty.set(val))}
                             />
                         </main>
                     }

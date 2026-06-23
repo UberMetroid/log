@@ -9,6 +9,7 @@ pub struct EditorProps {
     pub save_interval: u64,
     pub disable_print_expand: bool,
     pub on_status: Callback<Option<(String, String)>>,
+    pub on_content_empty: Callback<bool>,
 }
 
 fn save_notepad(id: String, content: String, status: UseStateHandle<String>) {
@@ -28,6 +29,15 @@ pub fn editor(props: &EditorProps) -> Html {
     let editor_ref = use_node_ref();
     let save_status = use_state(|| "saved".to_string());
     let locale = use_context::<crate::i18n::LocaleContext>().unwrap();
+
+    {
+        let on_content_empty = props.on_content_empty.clone();
+        let content_str = (*content).clone();
+        use_effect_with(content_str, move |c| {
+            on_content_empty.emit(c.trim().is_empty());
+            || ()
+        });
+    }
 
     {
         let on_status = props.on_status.clone();
