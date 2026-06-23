@@ -121,7 +121,31 @@ pub fn app() -> Html {
             <div class="container">
                 <link rel="stylesheet" href={theme_stylesheet_url} />
                 {if !*authenticated {
-                    html! { <Login on_login_success={let auth = authenticated.clone(); Callback::from(move |_| auth.set(true))} /> }
+                    html! { <Login on_login_success={
+                        let auth = authenticated.clone();
+                        Callback::from(move |_| {
+                            auth.set(true);
+                            if let Some(win) = web_sys::window() {
+                                let loc = win.location();
+                                let search = loc.search().unwrap_or_default();
+                                let mut redirect_url = "/".to_string();
+                                if let Ok(params) = web_sys::UrlSearchParams::new_with_str(&search) {
+                                    if let Some(r) = params.get("redirect") {
+                                        if !r.is_empty() && r.starts_with('/') && !r.starts_with("//") {
+                                            redirect_url = r;
+                                        }
+                                    }
+                                }
+                                if let Ok(history) = win.history() {
+                                    let _ = history.replace_state_with_url(
+                                        &wasm_bindgen::JsValue::NULL,
+                                        "",
+                                        Some(&redirect_url),
+                                    );
+                                }
+                            }
+                        })
+                    } /> }
                 } else {
                     html! {
                         <main>
