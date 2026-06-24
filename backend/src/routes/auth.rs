@@ -51,6 +51,8 @@ pub async fn get_config(State(state): State<AppState>) -> impl IntoResponse {
         "siteTitle": state.config.site_title,
         "baseUrl": state.config.base_url,
         "version": state.config.version,
+        "enableTranslation": state.config.enable_translation,
+        "enable_translation": state.config.enable_translation,
     }))
 }
 
@@ -69,7 +71,8 @@ pub async fn pin_required(
     axum::Json(serde_json::json!({
         "required": state.config.pin.is_some(),
         "length": state.config.pin.as_ref().map_or(0, |p| p.len()),
-        "locked": state.is_locked_out(ip).await
+        "locked": state.is_locked_out(ip).await,
+        "enable_translation": state.config.enable_translation
     }))
 }
 

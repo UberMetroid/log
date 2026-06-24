@@ -15,16 +15,19 @@ pub fn app() -> Html {
     let locale_state = use_state(crate::i18n::get_saved_locale);
     let active_notification = use_state(|| None::<(String, String)>);
     let is_pin_required = use_state(|| true);
+    let enable_translation = use_state(|| false);
 
     {
         let version = app_version.clone();
         let site_title = site_title.clone();
         let pin_req = is_pin_required.clone();
+        let enable_trans = enable_translation.clone();
         use_effect_with((), move |_| {
             spawn_local(async move {
                 if let Ok(config) = ApiService::get_config().await {
                     version.set(config.version);
                     site_title.set(config.site_title.clone());
+                    enable_trans.set(config.enable_translation);
                     if let Some(win) = web_sys::window() {
                         if let Some(doc) = win.document() {
                             doc.set_title(&config.site_title);
@@ -104,6 +107,7 @@ pub fn app() -> Html {
 
     let is_content_empty = use_state(|| true);
     let ver_val = (*app_version).clone();
+    let trans_val = *enable_translation;
 
     html! {
         <ContextProvider<crate::i18n::LocaleContext> context={locale_context}>
@@ -116,6 +120,7 @@ pub fn app() -> Html {
                 is_authenticated={*authenticated}
                 is_pin_required={*is_pin_required}
                 disable_print={*is_content_empty}
+                enable_translation={trans_val}
             />
             <div class="container">
                 {if !*authenticated {

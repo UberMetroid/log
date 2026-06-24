@@ -10,6 +10,7 @@ pub struct HeaderProps {
     pub is_authenticated: bool,
     pub is_pin_required: bool,
     pub disable_print: bool,
+    pub enable_translation: bool,
 }
 
 #[function_component(Header)]
@@ -91,23 +92,29 @@ pub fn header(props: &HeaderProps) -> Html {
                 <h1>{&props.site_title}</h1>
             </div>
             <div class="header-right">
-                <div class="language-select-container">
-                    <select
-                        class="language-select"
-                        id="language-select"
-                        value={locale.current.clone()}
-                        onchange={on_lang_change}
-                        aria-label="Select language"
-                    >
-                        {for langs.iter().map(|&(code, label)| {
-                            html! {
-                                <option value={code} selected={locale.current == code}>
-                                    {label}
-                                </option>
-                            }
-                        })}
-                    </select>
-                </div>
+                {if props.enable_translation {
+                    html! {
+                        <div class="language-select-container">
+                            <select
+                                class="language-select"
+                                id="language-select"
+                                value={locale.current.clone()}
+                                onchange={on_lang_change}
+                                aria-label="Select language"
+                            >
+                                {for langs.iter().map(|&(code, label)| {
+                                    html! {
+                                        <option value={code} selected={locale.current == code}>
+                                            {label}
+                                        </option>
+                                    }
+                                })}
+                            </select>
+                        </div>
+                    }
+                } else {
+                    html! {}
+                }}
                 <button id="theme-toggle" class="icon-button" onclick={props.toggle_theme.clone()} aria-label="Toggle theme" title={theme_toggle_tooltip}>
                     {theme_toggle_icon}
                 </button>

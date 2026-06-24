@@ -90,6 +90,8 @@ pub struct VerifyPinResponse {
 pub struct ConfigResponse {
     pub version: String,
     pub site_title: String,
+    #[serde(default)]
+    pub enable_translation: bool,
 }
 
 #[derive(Deserialize)]

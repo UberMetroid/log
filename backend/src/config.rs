@@ -12,6 +12,7 @@ pub struct AppConfig {
     pub node_env: String,
     pub version: String,
     pub allowed_origins: String,
+    pub enable_translation: bool,
 }
 
 impl AppConfig {
@@ -64,6 +65,9 @@ impl AppConfig {
         let node_env = std::env::var("NODE_ENV").unwrap_or_else(|_| "development".to_string());
         let version = env!("CARGO_PKG_VERSION").to_string();
         let allowed_origins = std::env::var("ALLOWED_ORIGINS").unwrap_or_else(|_| "*".to_string());
+        let enable_translation = std::env::var("ENABLE_TRANSLATION")
+            .map(|v| v == "true" || v == "on")
+            .unwrap_or(false);
 
         Self {
             site_title,
@@ -78,6 +82,7 @@ impl AppConfig {
             node_env,
             version,
             allowed_origins,
+            enable_translation,
         }
     }
 }
