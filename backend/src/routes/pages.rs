@@ -22,10 +22,11 @@ pub fn is_valid_redirect_url(url: &str) -> bool {
 // Root page server
 pub async fn serve_root(
     jar: CookieJar,
+    headers: axum::http::HeaderMap,
     State(state): State<AppState>,
     uri: Uri,
 ) -> impl IntoResponse {
-    if !is_authenticated(&jar, &state) {
+    if !is_authenticated(&jar, &state, &headers) {
         let redirect_param = percent_encoding::utf8_percent_encode(
             &uri.to_string(),
             percent_encoding::NON_ALPHANUMERIC,
@@ -55,10 +56,11 @@ pub async fn serve_root(
 // Login page server
 pub async fn serve_login(
     jar: CookieJar,
+    headers: axum::http::HeaderMap,
     State(state): State<AppState>,
     Query(params): Query<HashMap<String, String>>,
 ) -> impl IntoResponse {
-    if is_authenticated(&jar, &state) {
+    if is_authenticated(&jar, &state, &headers) {
         if let Some(redirect) = params.get("redirect") {
             if is_valid_redirect_url(redirect) {
                 return Redirect::temporary(redirect).into_response();

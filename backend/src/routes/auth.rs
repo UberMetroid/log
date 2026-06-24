@@ -10,18 +10,21 @@ use std::time::Duration;
 use crate::state::AppState;
 use crate::utils::{get_client_ip, hash_pin, secure_compare};
 
-pub const COOKIE_NAME: &str = "rustpad_auth";
+pub const COOKIE_NAME: &str = "RUSTPAD_PIN";
 
 // Authenticated helper
-pub fn is_authenticated(jar: &CookieJar, state: &AppState) -> bool {
+pub fn is_authenticated(jar: &CookieJar, state: &AppState, headers: &HeaderMap) -> bool {
     let pin = match &state.config.pin {
         Some(p) => p,
         None => return true,
     };
-    if let Some(cookie) = jar.get(COOKIE_NAME) {
-        secure_compare(cookie.value(), &hash_pin(pin))
-    } else {
-        false
+    let cookie_pin = jar.get(COOKIE_NAME).map(|c| c.value());
+    let header_pin = headers.get("x-pin").and_then(|h| h.to_str().ok());
+
+    match (cookie_pin, header_pin) {
+        (Some(cookie), _) => secure_compare(cookie, &hash_pin(pin)),
+        (None, Some(hdr)) => secure_compare(hdr, pin),
+        (None, None) => false,
     }
 }
 
@@ -32,7 +35,7 @@ pub async fn require_pin(
     req: axum::extract::Request,
     next: axum::middleware::Next,
 ) -> impl IntoResponse {
-    if !is_authenticated(&jar, &state) {
+    if !is_authenticated(&jar, &state, req.headers()) {
         return (
             axum::http::StatusCode::UNAUTHORIZED,
             axum::Json(serde_json::json!({ "error": "Unauthorized" })),

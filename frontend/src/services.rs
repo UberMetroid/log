@@ -9,7 +9,19 @@ pub struct StorageService;
 
 impl StorageService {
     pub fn get_theme() -> String {
-        GenericStorage::get_item("theme", "dark")
+        let raw = GenericStorage::get_item("theme", "crateria");
+        let theme = match raw.as_str() {
+            "light" => "brinstar".to_string(),
+            "dark" => "crateria".to_string(),
+            "nord" => "maridia".to_string(),
+            "dracula" => "wrecked_ship".to_string(),
+            "sepia" => "norfair".to_string(),
+            t => t.to_string(),
+        };
+        if theme != raw {
+            GenericStorage::set_item("theme", &theme);
+        }
+        theme
     }
 
     pub fn set_theme(theme: &str) {

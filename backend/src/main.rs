@@ -45,6 +45,7 @@ async fn main() {
         .or_else(|_| std::env::var("SITE_TITLE"))
         .unwrap_or_else(|_| "RustPad".to_string());
     let pin = std::env::var("RUSTPAD_PIN")
+        .or_else(|_| std::env::var("PIN"))
         .ok()
         .filter(|s| !s.is_empty())
         .filter(|p| p.len() >= 4 && p.len() <= 10 && p.chars().all(|c| c.is_ascii_digit()));

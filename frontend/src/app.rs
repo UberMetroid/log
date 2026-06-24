@@ -71,11 +71,12 @@ pub fn app() -> Html {
         let theme = theme.clone();
         Callback::from(move |_| {
             let next = match theme.as_str() {
-                "light" => "dark",
-                "dark" => "nord",
-                "nord" => "dracula",
-                "dracula" => "sepia",
-                _ => "light",
+                "crateria" => "brinstar",
+                "brinstar" => "norfair",
+                "norfair" => "wrecked_ship",
+                "wrecked_ship" => "maridia",
+                "maridia" => "tourian",
+                _ => "crateria",
             };
             StorageService::set_theme(next);
             if let Some(html) = window()
