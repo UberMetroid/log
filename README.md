@@ -8,6 +8,15 @@ Log is a collaborative real-time notepad and text editor designed for minimal re
 
 ---
 
+## 📦 Container Registry
+
+The Docker image is published to the following registries:
+
+*   **Docker Hub (Recommended)**: [ubermetroid/log](https://hub.docker.com/r/ubermetroid/log)
+*   **GitHub Container Registry (GHCR)**: [ghcr.io/ubermetroid/log](https://github.com/UberMetroid/log/pkgs/container/log)
+
+---
+
 ## 🐳 Container Installation
 
 
