@@ -1,10 +1,10 @@
-# Log - Real-Time Collaborative Notepad
+# Pad - Real-Time Collaborative Notepad
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/UberMetroid/log/main/frontend/Assets/log.png" alt="Log Logo" width="128" height="128">
+  <img src="https://raw.githubusercontent.com/UberMetroid/pad/main/frontend/Assets/pad.png" alt="Pad Logo" width="128" height="128">
 </p>
 
-Log is a collaborative real-time notepad and text editor designed for minimal resource usage, zero external JS library bloat, and fast load speeds. Built with a Rust (Axum/Tokio) backend and a WebAssembly (Yew) frontend.
+Pad is a collaborative real-time notepad and text editor designed for minimal resource usage, zero external JS library bloat, and fast load speeds. Built with a Rust (Axum/Tokio) backend and a WebAssembly (Yew) frontend.
 
 ---
 
@@ -12,8 +12,8 @@ Log is a collaborative real-time notepad and text editor designed for minimal re
 
 The Docker image is published to the following registries:
 
-*   **Docker Hub (Recommended)**: [ubermetroid/log](https://hub.docker.com/r/ubermetroid/log)
-*   **GitHub Container Registry (GHCR)**: [ghcr.io/ubermetroid/log](https://github.com/UberMetroid/log/pkgs/container/log)
+*   **Docker Hub (Recommended)**: [ubermetroid/pad](https://hub.docker.com/r/ubermetroid/pad)
+*   **GitHub Container Registry (GHCR)**: [ghcr.io/ubermetroid/pad](https://github.com/UberMetroid/pad/pkgs/container/pad)
 
 ---
 
@@ -26,9 +26,9 @@ The Docker image is published to the following registries:
 ```yaml
 version: '3'
 services:
-  log:
-    image: ubermetroid/log:latest
-    container_name: log
+  pad:
+    image: ubermetroid/pad:latest
+    container_name: pad
     restart: unless-stopped
     ports:
       - 4402:4402
@@ -37,8 +37,8 @@ services:
     environment:
       - PORT=4402
       - BASE_URL=http://localhost:4402
-      - LOG_PIN=1234
-      - SITE_TITLE=Log
+      - PAD_PIN=1234
+      - SITE_TITLE=Pad
       - TRUST_PROXY=false
 ```
 
@@ -55,7 +55,7 @@ docker compose up -d
 To build the Docker container locally from the source files:
 
 ```bash
-docker build -t ubermetroid/log:latest .
+docker build -t ubermetroid/pad:latest .
 ```
 
 
@@ -68,10 +68,10 @@ Configure these settings inside your Docker Compose environment or container env
 | Variable | Description | Default |
 | :--- | :--- | :--- |
 | `PORT` | The port number the backend HTTP server will bind to inside the container. | `4402` |
-| `SITE_TITLE` | Custom website title rendered in navigation headers, browser tabs, and PWA manifest. *(Supports fallback `RUSTLOG_TITLE`)* | `Log` |
+| `SITE_TITLE` | Custom website title rendered in navigation headers, browser tabs, and PWA manifest. *(Supports fallback `PAD_TITLE` / `PAD_SITE_TITLE`)* | `Pad` |
 | `BASE_URL` | Application base URL. Essential when deploying behind reverse proxies to ensure redirect and websocket links are resolved correctly. | `http://localhost:4402` |
 | `ALLOWED_ORIGINS` | Comma-separated list of allowed HTTP request origins (CORS filter). Use `*` to allow all origins. | `*` |
-| `LOG_PIN` | Optional 4–10 digit PIN (numerical only) to lock access to the interface. Leave empty for public mode. | None |
+| `PAD_PIN` | Optional 4–10 digit PIN (numerical only) to lock access to the interface. Leave empty for public mode. *(Supports fallback `PIN`)* | None |
 | `TZ` | Timezone for the container processes and logs. | `UTC` |
 | `ENABLE_TRANSLATION` | Enable the multi-language / translation selector in the navigation header (true/false). | `false` |
 | `ENABLE_THEMES` | Enable the Super Metroid theme selector in the navigation header (true/false). | `true` |

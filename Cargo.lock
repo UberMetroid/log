@@ -914,46 +914,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
 
 [[package]]
-name = "log"
-version = "2.0.0"
-dependencies = [
- "axum",
- "axum-extra",
- "cookie",
- "dotenvy",
- "futures-util",
- "ipnet",
- "notify",
- "percent-encoding",
- "regex",
- "serde",
- "serde_json",
- "sha2",
- "tokio",
- "tower-http",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "log-frontend"
-version = "2.0.0"
-dependencies = [
- "futures-channel",
- "futures-util",
- "gloo-net 0.7.0",
- "gloo-timers 0.4.0",
- "js-sys",
- "percent-encoding",
- "serde",
- "serde_json",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "yew",
-]
-
-[[package]]
 name = "matchit"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -988,7 +948,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4a650543ca06a924e8b371db273b2756685faae30f8487da1b56505a8f78b0c"
 dependencies = [
  "libc",
- "log 0.4.33",
+ "log",
  "wasi",
  "windows-sys 0.48.0",
 ]
@@ -1017,7 +977,7 @@ dependencies = [
  "inotify",
  "kqueue",
  "libc",
- "log 0.4.33",
+ "log",
  "mio 0.8.11",
  "walkdir",
  "windows-sys 0.48.0",
@@ -1053,6 +1013,46 @@ name = "once_cell"
 version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
+
+[[package]]
+name = "pad"
+version = "2.0.0"
+dependencies = [
+ "axum",
+ "axum-extra",
+ "cookie",
+ "dotenvy",
+ "futures-util",
+ "ipnet",
+ "notify",
+ "percent-encoding",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "pad-frontend"
+version = "2.0.0"
+dependencies = [
+ "futures-channel",
+ "futures-util",
+ "gloo-net 0.7.0",
+ "gloo-timers 0.4.0",
+ "js-sys",
+ "percent-encoding",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "yew",
+]
 
 [[package]]
 name = "parking_lot"
@@ -1589,7 +1589,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f72a05e828585856dacd553fba484c242c46e391fb0e58917c942ee9202915c"
 dependencies = [
  "futures-util",
- "log 0.4.33",
+ "log",
  "tokio",
  "tungstenite",
 ]
@@ -1701,7 +1701,7 @@ version = "0.1.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100"
 dependencies = [
- "log 0.4.33",
+ "log",
  "pin-project-lite",
  "tracing-attributes",
  "tracing-core",
@@ -1734,7 +1734,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee855f1f400bd0e5c02d150ae5de3840039a3f54b025156404e34c23c03f47c3"
 dependencies = [
- "log 0.4.33",
+ "log",
  "once_cell",
  "tracing-core",
 ]
@@ -1763,7 +1763,7 @@ dependencies = [
  "data-encoding",
  "http 1.4.2",
  "httparse",
- "log 0.4.33",
+ "log",
  "rand",
  "sha1",
  "thiserror 2.0.18",

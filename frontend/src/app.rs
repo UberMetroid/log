@@ -10,7 +10,7 @@ use yew::prelude::*;
 pub fn app() -> Html {
     let authenticated = use_state(|| false);
     let app_version = use_state(|| "2.0.0".to_string());
-    let site_title = use_state(|| "Log".to_string());
+    let site_title = use_state(|| "Pad".to_string());
     let theme = use_state(StorageService::get_theme);
     let locale_state = use_state(crate::i18n::get_saved_locale);
     let active_notification = use_state(|| None::<(String, String)>);

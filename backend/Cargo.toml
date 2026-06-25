@@ -1,12 +1,12 @@
 [package]
-name = "log"
+name = "pad"
 version = "2.0.0"
 edition = "2021"
 authors = ["UberMetroid <admin@ubermetroid.com>"]
 license = "Apache-2.0"
-repository = "https://github.com/UberMetroid/Log"
-homepage = "https://github.com/UberMetroid/Log"
-description = "Axum backend service for Log."
+repository = "https://github.com/UberMetroid/pad"
+homepage = "https://github.com/UberMetroid/pad"
+description = "Axum backend service for pad."
 readme = "../README.md"
 
 [dependencies]

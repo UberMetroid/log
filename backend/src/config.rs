@@ -19,12 +19,12 @@ pub struct AppConfig {
 
 impl AppConfig {
     pub fn load_from_env(port: u16) -> Self {
-        let site_title = std::env::var("LOG_TITLE")
-            .or_else(|_| std::env::var("LOG_SITE_TITLE"))
+        let site_title = std::env::var("PAD_TITLE")
+            .or_else(|_| std::env::var("PAD_SITE_TITLE"))
             .or_else(|_| std::env::var("SITE_TITLE"))
-            .unwrap_or_else(|_| "Log".to_string());
+            .unwrap_or_else(|_| "Pad".to_string());
 
-        let pin = std::env::var("LOG_PIN")
+        let pin = std::env::var("PAD_PIN")
             .or_else(|_| std::env::var("PIN"))
             .ok()
             .filter(|s| !s.is_empty())
