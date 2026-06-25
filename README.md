@@ -70,6 +70,8 @@ Configure these settings inside your Docker Compose environment or container env
 | `RUSTPAD_PIN` | Optional 4–10 digit PIN (numerical only) to lock access to the interface. Leave empty for public mode. | None |
 | `TZ` | Timezone for the container processes and logs. | `UTC` |
 | `ENABLE_TRANSLATION` | Enable the multi-language / translation selector in the navigation header (true/false). | `false` |
+| `ENABLE_THEMES` | Enable the Super Metroid theme selector in the navigation header (true/false). | `true` |
+| `ENABLE_PRINT` | Enable the print button in the navigation header (true/false). | `true` |
 | `MAX_ATTEMPTS` | Maximum PIN auth attempts allowed before rate lockout. | `5` |
 | `LOCKOUT_TIME` | Bruteforce lockout duration in minutes. | `15` |
 | `TRUST_PROXY` | Set true if deploying behind reverse proxy (Nginx, Cloudflare). | `false` |
