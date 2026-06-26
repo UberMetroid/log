@@ -22,7 +22,7 @@
 
         # 1. Build the WASM frontend
         frontend = rustPlatform.buildRustPackage {
-          pname = "frontend";
+          pname = "pad-frontend";
           version = "2.0.0";
           src = ./.;
 
@@ -50,7 +50,7 @@
 
         # 2. Build the Axum backend
         backend = rustPlatform.buildRustPackage {
-          pname = "backend";
+          pname = "pad-backend";
           version = "2.0.0";
           src = ./.;
 

@@ -10,10 +10,12 @@ services:
       - ${PAD_DATA_PATH:-./data}:/app/data
     environment:
       PORT: 4402
-      SITE_TITLE: ${SITE_TITLE:-Pad}
+      SITE_TITLE: ${PAD_SITE_TITLE:-Pad}
       PAD_PIN: ${PAD_PIN:-}
-      BASE_URL: ${BASE_URL:-http://localhost:4402}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-*}
+      BASE_URL: ${PAD_BASE_URL:-http://localhost:4402}
+      ALLOWED_ORIGINS: ${PAD_ALLOWED_ORIGINS:-*}
       TZ: ${TZ:-UTC}
       ENABLE_TRANSLATION: ${ENABLE_TRANSLATION:-false}
+      ENABLE_THEMES: ${ENABLE_THEMES:-true}
+      ENABLE_PRINT: ${ENABLE_PRINT:-true}
       MAX_ATTEMPTS: ${MAX_ATTEMPTS:-5}
