@@ -196,8 +196,8 @@ async fn main() {
     // Setup routes
     let api_routes = Router::new()
         .route("/notepads", get(get_notepads).post(create_notepad))
-        .route("/notepads/:id", put(rename_notepad).delete(delete_notepad))
-        .route("/notes/:id", get(get_notes).post(save_notes))
+        .route("/notepads/{id}", put(rename_notepad).delete(delete_notepad))
+        .route("/notes/{id}", get(get_notes).post(save_notes))
         .route("/search", get(search_api))
         .layer(middleware::from_fn_with_state(state.clone(), require_pin));
 
