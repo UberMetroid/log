@@ -4,6 +4,7 @@ use sha2::{Digest, Sha256};
 use std::net::{IpAddr, SocketAddr};
 
 /// Hash a string slice using SHA-256 and return its hex representation
+#[allow(dead_code)]
 pub fn hash_pin(pin: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(pin.as_bytes());

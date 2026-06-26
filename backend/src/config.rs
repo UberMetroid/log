@@ -28,7 +28,7 @@ impl AppConfig {
             .or_else(|_| std::env::var("PIN"))
             .ok()
             .filter(|s| !s.is_empty())
-            .filter(|p| p.len() >= 4 && p.len() <= 10 && p.chars().all(|c| c.is_ascii_digit()));
+            .filter(|p| p.len() >= 4 && p.len() <= 64);
 
         let cookie_max_age_hours = std::env::var("COOKIE_MAX_AGE")
             .ok()

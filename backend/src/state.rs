@@ -40,6 +40,12 @@ pub struct AppStateInner {
     // Login attempts brute-force prevention
     pub login_attempts: RwLock<HashMap<IpAddr, LoginAttempts>>,
 
+    // Active session IDs cache
+    pub active_sessions: RwLock<std::collections::HashSet<String>>,
+
+    // Rate limiter request counts
+    pub rate_limiter: RwLock<HashMap<IpAddr, Vec<Instant>>>,
+
     // Notepad metadata and index cache
     pub notepads: RwLock<Vec<Notepad>>,
     pub index_items: RwLock<Vec<IndexedItem>>,
@@ -186,5 +192,33 @@ impl AppStateInner {
         let mut map = self.login_attempts.write().await;
         let lockout_dur = Duration::from_secs(self.config.lockout_time_minutes * 60);
         map.retain(|_, attempts| attempts.last_attempt.elapsed() < lockout_dur);
+    }
+
+    pub async fn check_rate_limit(&self, ip: IpAddr) -> bool {
+        let max_requests = 100; // 100 requests
+        let window = Duration::from_secs(60); // per 60 seconds
+        let now = Instant::now();
+
+        let mut map = self.rate_limiter.write().await;
+        let timestamps = map.entry(ip).or_insert_with(Vec::new);
+        
+        timestamps.retain(|&t| now.duration_since(t) < window);
+
+        if timestamps.len() >= max_requests {
+            false
+        } else {
+            timestamps.push(now);
+            true
+        }
+    }
+
+    pub async fn clean_old_rate_limits(&self) {
+        let window = Duration::from_secs(60);
+        let now = Instant::now();
+        let mut map = self.rate_limiter.write().await;
+        map.retain(|_, timestamps| {
+            timestamps.retain(|&t| now.duration_since(t) < window);
+            !timestamps.is_empty()
+        });
     }
 }

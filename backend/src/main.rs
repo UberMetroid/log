@@ -108,6 +108,8 @@ async fn main() {
         clients: RwLock::new(HashMap::new()),
         operations_history: RwLock::new(HashMap::new()),
         login_attempts: RwLock::new(HashMap::new()),
+        active_sessions: RwLock::new(std::collections::HashSet::new()),
+        rate_limiter: RwLock::new(HashMap::new()),
         notepads: RwLock::new(Vec::new()),
         index_items: RwLock::new(Vec::new()),
     });
@@ -171,6 +173,7 @@ async fn main() {
         loop {
             tokio::time::sleep(Duration::from_secs(60)).await;
             state_clone2.clean_old_lockouts().await;
+            state_clone2.clean_old_rate_limits().await;
         }
     });
 
@@ -207,11 +210,15 @@ async fn main() {
         .route("/config", get(get_config))
         .route("/logout", post(logout));
 
+    let merged_api = api_routes.merge(public_api_routes).layer(
+        middleware::from_fn_with_state(state.clone(), crate::routes::rate_limit_middleware),
+    );
+
     let app = Router::new()
         .route("/", get(serve_root))
         .route("/login", get(serve_login))
         .route("/service-worker.js", get(serve_service_worker))
-        .nest("/api", api_routes.merge(public_api_routes))
+        .nest("/api", merged_api)
         .route("/ws", get(handle_socket))
         .route("/health", get(health_check))
         .fallback_service(

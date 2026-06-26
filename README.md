@@ -10,7 +10,7 @@ Pad is a collaborative real-time notepad and text editor designed for minimal re
 
 ## ⚡ Key Features
 
-*   **Zebes Themes**: High-quality UI styling options based on the 6 classic Super Metroid regions (Crateria, Brinstar, Norfair, Wrecked Ship, Maridia, Tourian).
+*   **Dynamic Themes**: Dynamic theme options.
 *   **Access PIN Security**: Lock down the interface with an optional numerical PIN for absolute privacy.
 *   **Internationalization**: Built-in multilingual translation selector support.
 *   **Print Optimization**: Customized print stylesheet layout and print header action button.

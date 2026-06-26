@@ -8,12 +8,12 @@ use std::net::SocketAddr;
 use std::time::Duration;
 
 use crate::state::AppState;
-use crate::utils::{get_client_ip, hash_pin, secure_compare};
+use crate::utils::{get_client_ip, secure_compare};
 
 pub const COOKIE_NAME: &str = "PAD_PIN";
 
 // Authenticated helper
-pub fn is_authenticated(jar: &CookieJar, state: &AppState, headers: &HeaderMap) -> bool {
+pub async fn is_authenticated(jar: &CookieJar, state: &AppState, headers: &HeaderMap) -> bool {
     let pin = match &state.config.pin {
         Some(p) => p,
         None => return true,
@@ -22,7 +22,7 @@ pub fn is_authenticated(jar: &CookieJar, state: &AppState, headers: &HeaderMap) 
     let header_pin = headers.get("x-pin").and_then(|h| h.to_str().ok());
 
     match (cookie_pin, header_pin) {
-        (Some(cookie), _) => secure_compare(cookie, &hash_pin(pin)),
+        (Some(cookie), _) => state.active_sessions.read().await.contains(cookie),
         (None, Some(hdr)) => secure_compare(hdr, pin),
         (None, None) => false,
     }
@@ -35,7 +35,7 @@ pub async fn require_pin(
     req: axum::extract::Request,
     next: axum::middleware::Next,
 ) -> impl IntoResponse {
-    if !is_authenticated(&jar, &state, req.headers()) {
+    if !is_authenticated(&jar, &state, req.headers()).await {
         return (
             axum::http::StatusCode::UNAUTHORIZED,
             axum::Json(serde_json::json!({ "error": "Unauthorized" })),
@@ -88,6 +88,27 @@ pub struct VerifyPinPayload {
     pub pin: String,
 }
 
+pub fn generate_session_id() -> String {
+    use std::fs::File;
+    use std::io::Read;
+    let file = File::open("/dev/urandom").ok();
+    let mut bytes = [0u8; 16];
+    if let Some(mut f) = file {
+        if f.read_exact(&mut bytes).is_ok() {
+            return bytes.iter().map(|b| format!("{:02x}", b)).collect();
+        }
+    }
+    let random_val = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    hasher.update(random_val.to_string().as_bytes());
+    let result = hasher.finalize();
+    result.iter().map(|b| format!("{:02x}", b)).collect()
+}
+
 pub async fn verify_pin(
     headers: HeaderMap,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -131,9 +152,7 @@ pub async fn verify_pin(
 
     let expected_pin = pin_req.as_ref().unwrap();
 
-    let is_valid_fmt = payload.pin.len() >= 4
-        && payload.pin.len() <= 10
-        && payload.pin.chars().all(|c| c.is_ascii_digit());
+    let is_valid_fmt = payload.pin.len() >= 4 && payload.pin.len() <= 64;
 
     if !is_valid_fmt {
         state.record_login_attempt(ip).await;
@@ -147,9 +166,11 @@ pub async fn verify_pin(
             .into_response();
     }
 
-    let hashed_payload_pin = hash_pin(&payload.pin);
-    if secure_compare(&hashed_payload_pin, &hash_pin(expected_pin)) {
+    if secure_compare(&payload.pin, expected_pin) {
         state.reset_login_attempts(ip).await;
+
+        let session_id = generate_session_id();
+        state.active_sessions.write().await.insert(session_id.clone());
 
         let cookie_max_age = Duration::from_secs((state.config.cookie_max_age_hours * 3600) as u64);
         let same_site = SameSite::Strict;
@@ -161,7 +182,7 @@ pub async fn verify_pin(
             .unwrap_or_else(|| state.config.base_url.starts_with("https"));
 
         let jar = jar.add(
-            Cookie::build((COOKIE_NAME, hashed_payload_pin))
+            Cookie::build((COOKIE_NAME, session_id))
                 .path("/")
                 .http_only(true)
                 .secure(secure)
@@ -191,7 +212,10 @@ pub async fn verify_pin(
 }
 
 // API: Logout
-pub async fn logout(jar: CookieJar) -> impl IntoResponse {
+pub async fn logout(jar: CookieJar, State(state): State<AppState>) -> impl IntoResponse {
+    if let Some(cookie) = jar.get(COOKIE_NAME) {
+        state.active_sessions.write().await.remove(cookie.value());
+    }
     let jar = jar.add(
         Cookie::build((COOKIE_NAME, ""))
             .path("/")
@@ -201,6 +225,35 @@ pub async fn logout(jar: CookieJar) -> impl IntoResponse {
             .build(),
     );
     (jar, axum::Json(serde_json::json!({ "success": true }))).into_response()
+}
+
+pub async fn rate_limit_middleware(
+    State(state): State<AppState>,
+    req: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> impl IntoResponse {
+    let addr = req
+        .extensions()
+        .get::<ConnectInfo<SocketAddr>>()
+        .map(|ci| ci.0);
+
+    let ip = get_client_ip(
+        req.headers(),
+        addr.unwrap_or_else(|| SocketAddr::from(([127, 0, 0, 1], 0))),
+        state.config.trust_proxy,
+        &state.config.trusted_proxies,
+    );
+
+    if !state.check_rate_limit(ip).await {
+        let body = serde_json::json!({
+            "error": "Too many requests. Please slow down."
+        });
+        let mut response = axum::response::Json(body).into_response();
+        *response.status_mut() = axum::http::StatusCode::TOO_MANY_REQUESTS;
+        return response;
+    }
+
+    next.run(req).await
 }
 
 pub async fn security_headers_middleware(
