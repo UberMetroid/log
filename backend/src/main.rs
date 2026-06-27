@@ -90,7 +90,7 @@ async fn main() {
         .unwrap_or(4402);
 
     let config = AppConfig::load_from_env(port);
-    let site_title = config.site_title.clone();
+    let site_title = config.server.site_title.clone();
 
     let root_path = PathBuf::from(".");
     let data_dir = root_path.join("data");
@@ -174,7 +174,7 @@ async fn main() {
         }
     });
 
-    let cors = if state.config.allowed_origins == "*" {
+    let cors = if state.config.server.allowed_origins == "*" {
         tower_http::cors::CorsLayer::permissive()
     } else {
         let mut cors = tower_http::cors::CorsLayer::new()
@@ -185,7 +185,7 @@ async fn main() {
                 axum::http::Method::DELETE,
             ])
             .allow_headers([axum::http::header::CONTENT_TYPE, axum::http::header::COOKIE]);
-        for origin in state.config.allowed_origins.split(',') {
+        for origin in state.config.server.allowed_origins.split(',') {
             if let Ok(parsed) = origin.trim().parse::<axum::http::HeaderValue>() {
                 cors = cors.allow_origin(parsed);
             }
@@ -235,7 +235,7 @@ async fn main() {
         .await
         .unwrap();
     println!("Server is running on port {}", port);
-    println!("Base URL: {}", state.config.base_url);
+    println!("Base URL: {}", state.config.server.base_url);
     println!("Environment: {}", state.config.node_env);
     println!("Version: {}", state.config.version);
 

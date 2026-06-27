@@ -20,10 +20,10 @@ pub async fn handle_socket(
 ) -> impl IntoResponse {
     let origin = headers.get("origin").and_then(|h| h.to_str().ok());
 
-    let allowed = if state.config.node_env == "development" || state.config.base_url == "*" {
+    let allowed = if state.config.node_env == "development" || state.config.server.base_url == "*" {
         true
     } else if let Some(o) = origin {
-        o == state.config.base_url
+        o == state.config.server.base_url
     } else {
         false
     };

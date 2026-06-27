@@ -14,7 +14,7 @@ pub const COOKIE_NAME: &str = "PAD_PIN";
 
 // Authenticated helper
 pub async fn is_authenticated(jar: &CookieJar, state: &AppState, headers: &HeaderMap) -> bool {
-    let pin = match &state.config.pin {
+    let pin = match &state.config.server.pin {
         Some(p) => p,
         None => return true,
     };
@@ -48,19 +48,19 @@ pub async fn require_pin(
 // API: Config
 pub async fn get_config(State(state): State<AppState>) -> impl IntoResponse {
     axum::Json(serde_json::json!({
-        "siteTitle": state.config.site_title,
-        "baseUrl": state.config.base_url,
+        "siteTitle": state.config.server.site_title,
+        "baseUrl": state.config.server.base_url,
         "version": state.config.version,
-        "enableTranslation": state.config.enable_translation,
-        "enable_translation": state.config.enable_translation,
-        "enableThemes": state.config.enable_themes,
-        "enable_themes": state.config.enable_themes,
-        "enablePrint": state.config.enable_print,
-        "enable_print": state.config.enable_print,
-        "showVersion": state.config.show_version,
-        "show_version": state.config.show_version,
-        "showGithub": state.config.show_github,
-        "show_github": state.config.show_github,
+        "enableTranslation": state.config.server.enable_translation,
+        "enable_translation": state.config.server.enable_translation,
+        "enableThemes": state.config.server.enable_themes,
+        "enable_themes": state.config.server.enable_themes,
+        "enablePrint": state.config.server.enable_print,
+        "enable_print": state.config.server.enable_print,
+        "showVersion": state.config.server.show_version,
+        "show_version": state.config.server.show_version,
+        "showGithub": state.config.server.show_github,
+        "show_github": state.config.server.show_github,
     }))
 }
 
@@ -73,18 +73,18 @@ pub async fn pin_required(
     let ip = get_client_ip(
         &headers,
         addr,
-        state.config.trust_proxy,
-        &state.config.trusted_proxies,
+        state.config.server.trust_proxy,
+        &state.config.server.trusted_proxies,
     );
     axum::Json(serde_json::json!({
-        "required": state.config.pin.is_some(),
-        "length": state.config.pin.as_ref().map_or(0, |p| p.len()),
+        "required": state.config.server.pin.is_some(),
+        "length": state.config.server.pin.as_ref().map_or(0, |p| p.len()),
         "locked": state.is_locked_out(ip).await,
-        "enable_translation": state.config.enable_translation,
-        "enable_themes": state.config.enable_themes,
-        "enable_print": state.config.enable_print,
-        "show_version": state.config.show_version,
-        "show_github": state.config.show_github,
+        "enable_translation": state.config.server.enable_translation,
+        "enable_themes": state.config.server.enable_themes,
+        "enable_print": state.config.server.enable_print,
+        "show_version": state.config.server.show_version,
+        "show_github": state.config.server.show_github,
     }))
 }
 
@@ -122,7 +122,7 @@ pub async fn verify_pin(
     State(state): State<AppState>,
     axum::Json(payload): axum::Json<VerifyPinPayload>,
 ) -> impl IntoResponse {
-    let pin_req = &state.config.pin;
+    let pin_req = &state.config.server.pin;
     if pin_req.is_none() {
         return (
             axum::http::StatusCode::OK,
@@ -134,14 +134,14 @@ pub async fn verify_pin(
     let ip = get_client_ip(
         &headers,
         addr,
-        state.config.trust_proxy,
-        &state.config.trusted_proxies,
+        state.config.server.trust_proxy,
+        &state.config.server.trusted_proxies,
     );
 
     if state.is_locked_out(ip).await {
         let map = state.login_attempts.read().await;
         let last_time = map.get(&ip).map(|a| a.last_attempt).unwrap();
-        let lockout_dur = Duration::from_secs(state.config.lockout_time_minutes * 60);
+        let lockout_dur = Duration::from_secs(state.config.server.lockout_time_minutes * 60);
         let time_left = lockout_dur
             .checked_sub(last_time.elapsed())
             .unwrap_or(Duration::ZERO);
@@ -182,14 +182,14 @@ pub async fn verify_pin(
             .await
             .insert(session_id.clone());
 
-        let cookie_max_age = Duration::from_secs((state.config.cookie_max_age_hours * 3600) as u64);
+        let cookie_max_age = Duration::from_secs((state.config.server.cookie_max_age_hours * 3600) as u64);
         let same_site = SameSite::Strict;
 
         let secure = headers
             .get("x-forwarded-proto")
             .and_then(|v| v.to_str().ok())
             .map(|v| v.eq_ignore_ascii_case("https"))
-            .unwrap_or_else(|| state.config.base_url.starts_with("https"));
+            .unwrap_or_else(|| state.config.server.base_url.starts_with("https"));
 
         let jar = jar.add(
             Cookie::build((COOKIE_NAME, session_id))
@@ -207,7 +207,7 @@ pub async fn verify_pin(
 
         let map = state.login_attempts.read().await;
         let attempts_count = map.get(&ip).map(|a| a.count).unwrap_or(0);
-        let attempts_left = state.config.max_attempts.saturating_sub(attempts_count);
+        let attempts_left = state.config.server.max_attempts as usize -(attempts_count);
 
         (
             axum::http::StatusCode::UNAUTHORIZED,
@@ -250,8 +250,8 @@ pub async fn rate_limit_middleware(
     let ip = get_client_ip(
         req.headers(),
         addr.unwrap_or_else(|| SocketAddr::from(([127, 0, 0, 1], 0))),
-        state.config.trust_proxy,
-        &state.config.trusted_proxies,
+        state.config.server.trust_proxy,
+        &state.config.server.trusted_proxies,
     );
 
     if !state.check_rate_limit(ip).await {
