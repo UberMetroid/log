@@ -1,6 +1,6 @@
 use crate::api::{ApiService, StorageService};
 use crate::app::{App, Msg};
-use shared_assets::theme::Theme;
+use shared_frontend::theme::Theme;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 

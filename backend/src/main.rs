@@ -2,7 +2,7 @@ use axum::{
     Router, middleware,
     routing::{get, post, put},
 };
-use shared_assets::middleware::{HstsState, cors_layer, hsts_layer, security_headers_layer};
+use shared_backend::middleware::{HstsState, cors_layer, hsts_layer, security_headers_layer};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -98,7 +98,7 @@ async fn main() {
     let public_dir = root_path.join("frontend/dist");
 
     // Initialize state. Note: `login_attempts` is intentionally absent — PIN
-    // brute-force lockouts are now global via `shared_assets::auth::attempts`
+    // brute-force lockouts are now global via `shared_backend::auth::attempts`
     // and clean themselves up. We only manage the per-IP request budget here.
     let state: AppState = Arc::new(AppStateInner {
         config,
@@ -166,7 +166,7 @@ async fn main() {
     });
 
     // Background cleanup for the per-IP request budget only. PIN-attempt
-    // lockouts now live in `shared_assets::auth::attempts` (process-global)
+    // lockouts now live in `shared_backend::auth::attempts` (process-global)
     // and remove themselves when the lockout expires.
     let state_clone2 = state.clone();
     tokio::spawn(async move {
@@ -176,7 +176,7 @@ async fn main() {
         }
     });
 
-    // CORS, security headers, and HSTS are all delegated to `shared-assets`,
+    // CORS, security headers, and HSTS are all delegated to `shared-backend`,
     // so the same production-tested configuration applies across every
     // companion app. The `Arc<ServerConfig>` is shared between layers to keep
     // the dependency tree small.
