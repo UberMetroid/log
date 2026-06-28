@@ -5,7 +5,7 @@
 //! - `node_env` — dev/prod env hint
 //! - `version` — CARGO_PKG_VERSION snapshot
 
-use shared_assets::server::ServerConfig;
+use shared_backend::server::ServerConfig;
 
 /// Pad application configuration. Wraps [`ServerConfig`] with pad-specific
 /// retention and version fields.

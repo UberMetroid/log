@@ -2,7 +2,7 @@ use crate::app::{App, Msg};
 use crate::components::editor::Editor;
 use crate::components::header::Header;
 use crate::components::pin::Login;
-use shared_assets::i18n::Language;
+use shared_core::i18n::Language;
 use yew::prelude::*;
 
 impl App {
@@ -43,10 +43,10 @@ impl App {
                     is_authenticated={self.authenticated}
                     pin_required={self.is_pin_required}
                     on_logout={on_logout}
-                    disable_print={self.is_content_empty}
+                    on_print={None}
+                    print_disabled={self.is_content_empty}
                     enable_translation={self.enable_translation}
                     enable_themes={self.enable_themes}
-                    enable_print={self.enable_print}
                 />
                 <div class="container">
                     {if !self.authenticated {

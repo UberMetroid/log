@@ -15,7 +15,7 @@ use axum::{
 use axum_extra::extract::cookie::CookieJar;
 
 use constant_time_eq::constant_time_eq;
-use shared_assets::server::get_client_ip;
+use shared_backend::server::get_client_ip;
 use std::net::SocketAddr;
 
 pub const COOKIE_NAME: &str = "PAD_PIN";

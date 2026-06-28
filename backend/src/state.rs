@@ -35,7 +35,7 @@ pub struct AppStateInner {
     pub active_sessions: RwLock<std::collections::HashSet<String>>,
 
     // Per-IP request budget for general rate limiting (separate from PIN
-    // brute-force lockouts, which now live in `shared_assets::auth::attempts`
+    // brute-force lockouts, which now live in `shared_backend::auth::attempts`
     // and are global to the process).
     pub rate_limiter: RwLock<HashMap<IpAddr, Vec<Instant>>>,
 

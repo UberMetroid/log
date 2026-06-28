@@ -4,7 +4,7 @@ use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
 
 use crate::storage::StorageService as GenericStorage;
-use shared_assets::theme::{Theme, mapping::Scheme};
+use shared_frontend::theme::{Theme, mapping::Scheme};
 
 pub struct StorageService;
 
