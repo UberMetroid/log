@@ -1,6 +1,10 @@
-pub mod handlers;
+pub mod verify_pin;
+pub mod logout;
+pub mod pin_required;
 
-pub use handlers::{get_config, logout, pin_required, verify_pin};
+pub use verify_pin::verify_pin;
+pub use logout::logout;
+pub use pin_required::{pin_required, get_config};
 
 use crate::state::AppState;
 use axum::{
