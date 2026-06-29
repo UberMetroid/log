@@ -1,12 +1,9 @@
-use axum::{
-    extract::State,
-    response::IntoResponse,
-};
+use axum::{extract::State, response::IntoResponse};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use std::time::Duration;
 
-use crate::state::AppState;
 use super::COOKIE_NAME;
+use crate::state::AppState;
 
 pub async fn logout(jar: CookieJar, State(state): State<AppState>) -> impl IntoResponse {
     if let Some(cookie) = jar.get(COOKIE_NAME) {

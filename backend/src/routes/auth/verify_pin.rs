@@ -9,8 +9,8 @@ use shared_backend::server::get_client_ip;
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use crate::state::AppState;
 use super::COOKIE_NAME;
+use crate::state::AppState;
 
 #[derive(serde::Deserialize)]
 pub struct VerifyPinPayload {

@@ -21,9 +21,9 @@ mod tests;
 mod ws;
 
 pub use config::AppConfig;
-pub use services::{migration, search};
-use services::migration::migrate_all_notepads_to_name_based_files;
 use routes::*;
+use services::migration::migrate_all_notepads_to_name_based_files;
+pub use services::{migration, search};
 use state::{AppState, AppStateInner};
 use ws::handle_socket;
 
