@@ -114,7 +114,7 @@ dependencies = [
 
 [[package]]
 name = "backend"
-version = "3.0.14"
+version = "3.0.15"
 dependencies = [
  "axum",
  "axum-extra",
@@ -129,7 +129,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "shared-backend",
- "shared-core",
+ "shared-core 3.0.11",
  "tokio",
  "tower-http",
  "tracing",
@@ -366,7 +366,7 @@ dependencies = [
 
 [[package]]
 name = "frontend"
-version = "3.0.14"
+version = "3.0.15"
 dependencies = [
  "futures-channel",
  "futures-util",
@@ -376,7 +376,7 @@ dependencies = [
  "percent-encoding",
  "serde",
  "serde_json",
- "shared-core",
+ "shared-core 3.0.11",
  "shared-frontend",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -1434,7 +1434,7 @@ dependencies = [
  "http-body-util",
  "ipnet",
  "serde",
- "shared-core",
+ "shared-core 3.0.0",
  "thiserror 2.0.18",
  "tokio",
  "tower-http",
@@ -1451,12 +1451,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "shared-core"
+version = "3.0.11"
+source = "git+https://github.com/UberMetroid/shared-assets?tag=v3.0.11#66fc075bdf9e24d2ff4d12453befd20cd5ba0429"
+dependencies = [
+ "constant_time_eq",
+ "serde",
+]
+
+[[package]]
 name = "shared-frontend"
 version = "3.0.0"
 source = "git+https://github.com/UberMetroid/shared-assets?tag=v3.0.3#4c228fb928555086e30f1d5a176b568e602e3ec7"
 dependencies = [
  "serde",
- "shared-core",
+ "shared-core 3.0.0",
  "web-sys",
  "yew",
 ]
@@ -1951,7 +1960,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
