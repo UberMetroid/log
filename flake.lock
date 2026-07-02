@@ -79,16 +79,16 @@
     "shared-assets": {
       "flake": false,
       "locked": {
-        "lastModified": 1782693708,
-        "narHash": "sha256-ozJJ4XDZOA3BbTBrHhN3gi/2xRIuVnAq940QyNltMl8=",
+        "lastModified": 1782971416,
+        "narHash": "sha256-BWRLRyE3vVyrxGzSZRfj4se2bE1cVtukZwj3o4n7cEc=",
         "owner": "UberMetroid",
         "repo": "shared-assets",
-        "rev": "4c228fb928555086e30f1d5a176b568e602e3ec7",
+        "rev": "77df9865dc00e2aad6ee51fdde687e29028386c9",
         "type": "github"
       },
       "original": {
         "owner": "UberMetroid",
-        "ref": "v3.0.2",
+        "ref": "v3.0.13",
         "repo": "shared-assets",
         "type": "github"
       }

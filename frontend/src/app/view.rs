@@ -22,10 +22,7 @@ impl App {
 
         let on_logout = ctx.link().callback(|_| Msg::Logout);
 
-        let version_url = format!(
-            "https://github.com/UberMetroid/pad/releases/tag/v{}",
-            self.app_version
-        );
+
 
         html! {
             <ContextProvider<crate::i18n::LocaleContext> context={locale_context}>
@@ -43,11 +40,16 @@ impl App {
                     is_authenticated={self.authenticated}
                     pin_required={self.is_pin_required}
                     on_logout={on_logout}
-                    on_print={None}
+                    on_print={Some(Callback::from(|_| {
+                        if let Some(w) = web_sys::window() {
+                            let _ = w.print();
+                        }
+                    }))}
                     print_disabled={self.is_content_empty}
                     enable_translation={self.enable_translation}
                     enable_themes={self.enable_themes}
                     enable_print={self.enable_print}
+                    version={Some(self.app_version.clone())}
                 />
                 <div class="container">
                     {if !self.authenticated {
@@ -94,7 +96,7 @@ impl App {
                         }
                     }}
                 </div>
-                <crate::components::footer::Footer show_version={self.show_version} version={self.app_version.clone()} show_github={self.show_github} {version_url}>
+                <crate::components::footer::Footer version={self.app_version.clone()} show_github={self.show_github}>
                     {
                         if let Some((msg, cls)) = &self.active_notification {
                             html! { <div class={format!("footer-status-text {}", cls)}>{ msg }</div> }
